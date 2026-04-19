@@ -1,0 +1,11 @@
+flutter_native_splash:
+  color: "#0A0A0F"
+  color_dark: "#0A0A0F"
+  image: assets/images/logo_sevak.png
+  image_dark: assets/images/logo_sevak.png
+  
+  android_12:
+    color: "#0A0A0F"
+    color_dark: "#0A0A0F"
+    image: assets/images/logo_sevak.png
+    image_dark: assets/images/logo_sevak.png
