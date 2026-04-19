@@ -1,0 +1,69 @@
+name: sevak_app
+description: SevakAI - AI-powered volunteer coordination platform for NGOs.
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.3.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # ── Firebase (All Free on Spark Plan) ───────────────────────────────────────
+  firebase_core: ^3.13.0
+  firebase_auth: ^5.5.3
+  cloud_firestore: ^5.6.6
+  firebase_messaging: ^15.2.5          # FCM - always free, no billing needed
+
+  # ── Google Sign-In ───────────────────────────────────────────────────────────
+  google_sign_in: ^6.3.0
+
+  # ── AI - Gemini (Free via Google AI Studio key) ──────────────────────────────
+  google_generative_ai: ^0.4.7
+
+  # ── Maps (100% Free, no API key needed) ──────────────────────────────────────
+  flutter_map: ^7.0.2
+  latlong2: ^0.9.1
+
+  # ── Image Pipeline ────────────────────────────────────────────────────────────
+  image_picker: ^1.1.2
+  flutter_image_compress: ^2.3.0       # Native-level compression
+  cloudinary_public: ^0.23.1           # Unsigned upload (no API secret needed)
+
+  # ── Geocoding & Location ──────────────────────────────────────────────────────
+  http: ^1.2.2                         # For Nominatim geocoding API calls
+  geolocator: ^13.0.2                  # Device GPS location
+  permission_handler: ^11.3.1          # Location permissions dialog
+  workmanager: ^0.9.0+3                  # Background 15-min location updates
+
+  # ── State Management & Navigation ─────────────────────────────────────────────
+  flutter_riverpod: ^2.6.1
+  go_router: ^14.6.3
+
+  # ── Notifications ─────────────────────────────────────────────────────────────
+  flutter_local_notifications: ^18.0.1
+
+  # ── Utilities ─────────────────────────────────────────────────────────────────
+  intl: ^0.19.0                        # Date & time formatting
+  connectivity_plus: ^6.1.4            # Network status monitoring
+  equatable: ^2.0.7                    # Value equality for domain entities
+  uuid: ^4.5.1                         # Unique ID generation
+  cached_network_image: ^3.4.1         # Efficient Cloudinary image display
+
+  # ── UI Enhancements ───────────────────────────────────────────────────────────
+  google_fonts: ^6.2.1
+  cupertino_icons: ^1.0.8
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+  build_runner: ^2.4.15                # For code generation
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/images/
+    - assets/icons/
