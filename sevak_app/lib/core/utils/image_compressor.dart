@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'dart:isolate';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import '../constants/app_constants.dart';
 
@@ -9,21 +8,17 @@ class ImageCompressor {
   ImageCompressor._();
 
   /// Compresses [imageFile] to under [AppConstants.imageTargetSizeKb] KB.
-  /// Runs in a background Isolate. Returns the compressed bytes.
+  /// Returns the compressed bytes.
   static Future<List<int>> compress(File imageFile) async {
-    return Isolate.run(() => _compressInBackground(imageFile.path));
-  }
-
-  /// Private: Runs inside the Isolate.
-  static Future<List<int>> _compressInBackground(String filePath) async {
     int quality = 90;
     List<int>? result;
 
-    // First pass: resize width to max 1080px and compress
+    // First pass: resize to max 1080px and compress
+    // FlutterImageCompress runs natively on a background thread, no Isolate needed.
     result = await FlutterImageCompress.compressWithFile(
-      filePath,
+      imageFile.path,
       minWidth: AppConstants.imageMaxWidthPx,
-      minHeight: 0, // Auto height to maintain aspect ratio
+      minHeight: AppConstants.imageMaxWidthPx, // Prevent 0 height crash
       quality: quality,
       format: CompressFormat.jpeg,
     );
@@ -33,9 +28,9 @@ class ImageCompressor {
     while (result != null && result.length > targetBytes && quality > 10) {
       quality -= 10;
       result = await FlutterImageCompress.compressWithFile(
-        filePath,
+        imageFile.path,
         minWidth: AppConstants.imageMaxWidthPx,
-        minHeight: 0,
+        minHeight: AppConstants.imageMaxWidthPx,
         quality: quality,
         format: CompressFormat.jpeg,
       );
