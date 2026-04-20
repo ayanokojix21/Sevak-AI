@@ -7,6 +7,7 @@ import 'features/auth/presentation/controllers/auth_controller.dart';
 import 'features/auth/presentation/pages/login_page.dart';
 import 'features/auth/presentation/pages/register_page.dart';
 import 'features/home/presentation/pages/home_page.dart';
+import 'features/dashboard/presentation/pages/dashboard_page.dart';
 import 'features/needs/presentation/pages/ai_processing_page.dart';
 import 'features/needs/presentation/pages/need_confirmation_page.dart';
 import 'features/needs/presentation/pages/submit_need_page.dart';
@@ -79,7 +80,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/need-confirmation',
         builder: (context, state) => const NeedConfirmationPage(),
       ),
-      // TODO: Phase 3 - Dashboard routes
+      // Phase 3 — Coordinator Dashboard
+      GoRoute(
+        path: '/dashboard',
+        builder: (context, state) => const DashboardPage(),
+      ),
       // TODO: Phase 4 - Task routes
     ],
   );

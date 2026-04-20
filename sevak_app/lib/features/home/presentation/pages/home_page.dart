@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/theme/app_theme.dart';
 import '../../../auth/presentation/controllers/auth_controller.dart';
 
 class HomePage extends ConsumerWidget {
@@ -45,6 +46,18 @@ class HomePage extends ConsumerWidget {
                   icon: const Icon(Icons.camera_alt),
                   label: const Text('Report a Need'),
                   style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                // Phase 3 — Coordinator Dashboard access
+                OutlinedButton.icon(
+                  onPressed: () => context.push('/dashboard'),
+                  icon: const Icon(Icons.dashboard_rounded),
+                  label: const Text('Coordinator Dashboard'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.accent,
+                    side: const BorderSide(color: AppColors.accent),
                     padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
                   ),
                 ),
