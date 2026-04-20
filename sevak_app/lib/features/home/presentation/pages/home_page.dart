@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../auth/presentation/controllers/auth_controller.dart';
 
@@ -39,7 +40,14 @@ class HomePage extends ConsumerWidget {
                 Text('Email: ${volunteer.email}'),
                 Text('Phone: ${volunteer.phone}'),
                 const SizedBox(height: 24),
-                const Text('Phase 2 Needs & Tasks will appear here.'),
+                ElevatedButton.icon(
+                  onPressed: () => context.push('/submit-need'),
+                  icon: const Icon(Icons.camera_alt),
+                  label: const Text('Report a Need'),
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                  ),
+                ),
               ],
             );
           },

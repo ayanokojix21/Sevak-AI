@@ -7,6 +7,9 @@ import 'features/auth/presentation/controllers/auth_controller.dart';
 import 'features/auth/presentation/pages/login_page.dart';
 import 'features/auth/presentation/pages/register_page.dart';
 import 'features/home/presentation/pages/home_page.dart';
+import 'features/needs/presentation/pages/ai_processing_page.dart';
+import 'features/needs/presentation/pages/need_confirmation_page.dart';
+import 'features/needs/presentation/pages/submit_need_page.dart';
 
 class SevakApp extends ConsumerWidget {
   const SevakApp({super.key});
@@ -63,7 +66,19 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/home',
         builder: (context, state) => const HomePage(),
       ),
-      // TODO: Phase 2 - Need submission routes
+      // Phase 2 - Need submission routes
+      GoRoute(
+        path: '/submit-need',
+        builder: (context, state) => const SubmitNeedPage(),
+      ),
+      GoRoute(
+        path: '/ai-processing',
+        builder: (context, state) => const AiProcessingPage(),
+      ),
+      GoRoute(
+        path: '/need-confirmation',
+        builder: (context, state) => const NeedConfirmationPage(),
+      ),
       // TODO: Phase 3 - Dashboard routes
       // TODO: Phase 4 - Task routes
     ],
