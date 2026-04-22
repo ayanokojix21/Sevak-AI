@@ -1,1 +1,25 @@
-{"flutter":{"platforms":{"android":{"default":{"projectId":"sevak-ai-3d2dc","appId":"1:29483186959:android:ae52e92f7e18f0ad18dc7a","fileOutput":"android/app/google-services.json"}},"dart":{"lib/firebase_options.dart":{"projectId":"sevak-ai-3d2dc","configurations":{"android":"1:29483186959:android:ae52e92f7e18f0ad18dc7a","web":"1:29483186959:web:c0c885fdb09f2f0618dc7a"}}}}}}
+{
+  "firestore": {
+    "rules": "firestore.rules"
+  },
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "sevak-ai-3d2dc",
+          "appId": "1:29483186959:android:ae52e92f7e18f0ad18dc7a",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "sevak-ai-3d2dc",
+          "configurations": {
+            "android": "1:29483186959:android:ae52e92f7e18f0ad18dc7a",
+            "web": "1:29483186959:web:c0c885fdb09f2f0618dc7a"
+          }
+        }
+      }
+    }
+  }
+}
