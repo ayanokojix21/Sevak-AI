@@ -5,6 +5,7 @@ import '../../domain/entities/volunteer.dart';
 import '../../domain/repositories/auth_repository.dart';
 import '../../data/repositories/firebase_auth_repository.dart';
 import '../../data/repositories/user_repository.dart';
+import '../../data/datasources/invite_codes_datasource.dart';
 
 /// Provider exposing the current authentication state (User?)
 final authStateProvider = StreamProvider<User?>((ref) {
@@ -19,19 +20,26 @@ final volunteerProfileProvider = FutureProvider<Volunteer?>((ref) async {
   return ref.watch(userRepositoryProvider).getVolunteerProfile(user.uid);
 });
 
+/// Provider exposing a stream of staff for a specific NGO
+final ngoStaffProvider = StreamProvider.family<List<Volunteer>, String>((ref, ngoId) {
+  return ref.watch(userRepositoryProvider).streamNgoStaff(ngoId);
+});
+
 /// Controller to handle authentication actions and loading states
 final authControllerProvider = StateNotifierProvider<AuthController, AsyncValue<void>>((ref) {
   return AuthController(
     ref.watch(authRepositoryProvider),
     ref.watch(userRepositoryProvider),
+    ref.watch(inviteCodeDatasourceProvider),
   );
 });
 
 class AuthController extends StateNotifier<AsyncValue<void>> {
   final AuthRepository _authRepository;
   final UserRepository _userRepository;
+  final InviteCodesDatasource _inviteCodesDatasource;
 
-  AuthController(this._authRepository, this._userRepository) : super(const AsyncValue.data(null));
+  AuthController(this._authRepository, this._userRepository, this._inviteCodesDatasource) : super(const AsyncValue.data(null));
 
   Future<void> signInWithEmail(String email, String password) async {
     state = const AsyncValue.loading();
@@ -55,13 +63,15 @@ class AuthController extends StateNotifier<AsyncValue<void>> {
       
       // Initialize the volunteer profile in Firestore
       if (cred.user != null) {
+        final isSuperAdmin = email == 'vinayakgoel012@gmail.com';
         final volunteer = Volunteer(
           uid: cred.user!.uid,
           name: name,
           email: email,
           phone: phone,
           primaryNgoId: '',
-          ngoMemberships: const [], // Unassigned initially
+          ngoMemberships: const [],
+          platformRole: isSuperAdmin ? 'SA' : 'CU',
           skills: [], // Can be filled later
           createdAt: DateTime.now(),
         );
@@ -84,13 +94,16 @@ class AuthController extends StateNotifier<AsyncValue<void>> {
         final existingProfile = await _userRepository.getVolunteerProfile(cred.user!.uid);
         
         if (existingProfile == null) {
+          final email = cred.user!.email ?? '';
+          final isSuperAdmin = email == 'vinayakgoel012@gmail.com';
           final volunteer = Volunteer(
             uid: cred.user!.uid,
             name: cred.user!.displayName ?? 'New Volunteer',
-            email: cred.user!.email ?? '',
+            email: email,
             phone: cred.user!.phoneNumber ?? '',
             primaryNgoId: '',
-          ngoMemberships: const [],
+            ngoMemberships: const [],
+            platformRole: isSuperAdmin ? 'SA' : 'CU',
             skills: [],
             createdAt: DateTime.now(),
           );
@@ -108,6 +121,43 @@ class AuthController extends StateNotifier<AsyncValue<void>> {
     state = const AsyncValue.loading();
     try {
       await _authRepository.signOut();
+      state = const AsyncValue.data(null);
+    } catch (e, st) {
+      state = AsyncValue.error(e, st);
+    }
+  }
+  Future<void> consumeInviteCode(String code) async {
+    state = const AsyncValue.loading();
+    try {
+      final user = _authRepository.currentUser;
+      if (user == null) throw Exception('Not logged in');
+
+      final inviteCode = await _inviteCodesDatasource.getInviteCode(code);
+      if (inviteCode == null) throw Exception('Invalid Invite Code');
+
+      final existingProfile = await _userRepository.getVolunteerProfile(user.uid);
+      if (existingProfile == null) throw Exception('Volunteer profile not found');
+
+      // Upgrade the profile
+      final updatedProfile = Volunteer(
+        uid: existingProfile.uid,
+        name: existingProfile.name,
+        email: existingProfile.email,
+        phone: existingProfile.phone,
+        primaryNgoId: inviteCode.ngoId,
+        ngoMemberships: existingProfile.ngoMemberships,
+        platformRole: inviteCode.targetRole,
+        skills: existingProfile.skills,
+        activeTasks: existingProfile.activeTasks,
+        createdAt: existingProfile.createdAt,
+      );
+
+      await _userRepository.saveVolunteerProfile(updatedProfile);
+
+      if (inviteCode.isSingleUse) {
+        await _inviteCodesDatasource.deleteInviteCode(code);
+      }
+
       state = const AsyncValue.data(null);
     } catch (e, st) {
       state = AsyncValue.error(e, st);

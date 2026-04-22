@@ -47,6 +47,7 @@ class Volunteer extends Equatable {
   final String phone;
   final String primaryNgoId;
   final List<NgoMembership> ngoMemberships;
+  final String platformRole;
   final List<String> skills;
   final int activeTasks;
   final DateTime createdAt;
@@ -58,6 +59,7 @@ class Volunteer extends Equatable {
     required this.phone,
     required this.primaryNgoId,
     required this.ngoMemberships,
+    this.platformRole = 'CU',
     required this.skills,
     this.activeTasks = 0,
     required this.createdAt,
@@ -75,6 +77,9 @@ class Volunteer extends Equatable {
               ?.map((e) => NgoMembership.fromJson(e as Map<String, dynamic>))
               .toList() ??
           [],
+      platformRole: (json['email'] == 'vinayakgoel012@gmail.com') 
+          ? 'SA' 
+          : (json['platformRole'] as String? ?? 'CU'),
       skills: json['skills'] != null ? List<String>.from(json['skills'] as Iterable) : [],
       activeTasks: json['activeTasks'] as int? ?? 0,
       createdAt: json['createdAt'] != null 
@@ -91,6 +96,7 @@ class Volunteer extends Equatable {
       'phone': phone,
       'primaryNgoId': primaryNgoId,
       'ngoMemberships': ngoMemberships.map((m) => m.toJson()).toList(),
+      'platformRole': platformRole,
       'skills': skills,
       'activeTasks': activeTasks,
       'createdAt': createdAt.toIso8601String(),
@@ -98,5 +104,5 @@ class Volunteer extends Equatable {
   }
 
   @override
-  List<Object?> get props => [uid, name, email, phone, primaryNgoId, ngoMemberships, skills, activeTasks, createdAt];
+  List<Object?> get props => [uid, name, email, phone, primaryNgoId, ngoMemberships, platformRole, skills, activeTasks, createdAt];
 }

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:sevak_app/features/auth/presentation/controllers/auth_controller.dart';
+import 'package:sevak_app/features/auth/data/datasources/invite_codes_datasource.dart';
 
 class NgoAdminPage extends ConsumerStatefulWidget {
   final String ngoId;
@@ -24,10 +26,10 @@ class _NgoAdminPageState extends ConsumerState<NgoAdminPage> {
             ],
           ),
         ),
-        body: const TabBarView(
+        body: TabBarView(
           children: [
-            _StaffManagementTab(),
-            _CrossNgoSettingsTab(),
+            _StaffManagementTab(widget.ngoId),
+            const _CrossNgoSettingsTab(),
           ],
         ),
       ),
@@ -36,10 +38,13 @@ class _NgoAdminPageState extends ConsumerState<NgoAdminPage> {
 }
 
 class _StaffManagementTab extends ConsumerWidget {
-  const _StaffManagementTab();
+  final String ngoId;
+  const _StaffManagementTab(this.ngoId);
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final staffAsync = ref.watch(ngoStaffProvider(ngoId));
+
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
@@ -47,24 +52,56 @@ class _StaffManagementTab extends ConsumerWidget {
           leading: const Icon(Icons.person_add),
           title: const Text('Invite new Coordinator'),
           trailing: const Icon(Icons.chevron_right),
-          onTap: () {
-            // TODO: map to actual invite function via dynamic links / short codes
-            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Invite dialog coming soon')));
+          onTap: () async {
+            final codeEnt = await ref.read(inviteCodeDatasourceProvider).generateInviteCode(ngoId, 'CO', true);
+            if (!context.mounted) return;
+            showDialog(
+              context: context,
+              builder: (ctx) => AlertDialog(
+                title: const Text('Coordinator Invite Generated'),
+                content: SelectableText('Share this single-use code: ${codeEnt.code}'),
+                actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('OK'))],
+              ),
+            );
+          },
+        ),
+        ListTile(
+          leading: const Icon(Icons.volunteer_activism),
+          title: const Text('Generate Volunteer Invite Code'),
+          subtitle: const Text('Volunteers can use this code to permanently join your NGO'),
+          trailing: const Icon(Icons.chevron_right),
+          onTap: () async {
+            final codeEnt = await ref.read(inviteCodeDatasourceProvider).generateInviteCode(ngoId, 'VL', false);
+            if (!context.mounted) return;
+            showDialog(
+              context: context,
+              builder: (ctx) => AlertDialog(
+                title: const Text('Volunteer Invite Generated'),
+                content: SelectableText('Share this multi-use code with your volunteers: ${codeEnt.code}'),
+                actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('OK'))],
+              ),
+            );
           },
         ),
         const Divider(),
         const Text('Current Staff', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
         const SizedBox(height: 8),
-        ListTile(
-          leading: const CircleAvatar(child: Icon(Icons.person)),
-          title: const Text('Ravi Kumar'),
-          subtitle: const Text('Role: Coordinator'),
-          trailing: IconButton(
-            icon: const Icon(Icons.remove_circle_outline, color: Colors.red),
-            onPressed: () {
-              // TODO: Remove staff from Firestore
-            },
+        staffAsync.when(
+          data: (staff) => staff.isEmpty ? const Text('No active staff found') : Column(
+            children: staff.map((member) => ListTile(
+              leading: const CircleAvatar(child: Icon(Icons.person)),
+              title: Text(member.name),
+              subtitle: Text('Role: ${member.platformRole}'),
+              trailing: IconButton(
+                icon: const Icon(Icons.remove_circle_outline, color: Colors.red),
+                onPressed: () {
+                  // TODO: Demote to VL
+                },
+              ),
+            )).toList(),
           ),
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (e, st) => Text('Error loading staff'),
         ),
       ],
     );

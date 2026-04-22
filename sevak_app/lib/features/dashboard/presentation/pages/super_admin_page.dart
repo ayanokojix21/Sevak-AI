@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:sevak_app/providers/ngo_providers.dart';
 
 class SuperAdminPage extends ConsumerStatefulWidget {
   const SuperAdminPage({super.key});
@@ -39,55 +40,65 @@ class _NgoManagementTab extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final pendingAsync = ref.watch(pendingNgosProvider);
+    final activeAsync = ref.watch(activeNgosProvider);
+
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
         const Text('Pending Approvals', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
         const SizedBox(height: 8),
-        Card(
-          child: ListTile(
-            leading: const Icon(Icons.business, color: Colors.orange),
-            title: const Text('Save The Children - Delhi'),
-            subtitle: const Text('Requested 2 hours ago'),
-            trailing: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.check_circle, color: Colors.green),
-                  tooltip: 'Approve',
-                  onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('NGO Approved')));
-                  },
+        pendingAsync.when(
+          data: (ngos) => ngos.isEmpty ? const Text('No pending requests') : Column(
+            children: ngos.map((ngo) => Card(
+              child: ListTile(
+                leading: const Icon(Icons.business, color: Colors.orange),
+                title: Text(ngo.name),
+                subtitle: Text('Requested: ${ngo.createdAt.day}/${ngo.createdAt.month}/${ngo.createdAt.year}'),
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.check_circle, color: Colors.green),
+                      tooltip: 'Approve',
+                      onPressed: () {
+                        ref.read(ngosDatasourceProvider).updateNgoStatus(ngo.id, 'active');
+                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('NGO Approved')));
+                      },
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.cancel, color: Colors.red),
+                      tooltip: 'Reject',
+                      onPressed: () {
+                        ref.read(ngosDatasourceProvider).updateNgoStatus(ngo.id, 'rejected');
+                      },
+                    ),
+                  ],
                 ),
-                IconButton(
-                  icon: const Icon(Icons.cancel, color: Colors.red),
-                  tooltip: 'Reject',
-                  onPressed: () {},
-                ),
-              ],
-            ),
+              ),
+            )).toList(),
           ),
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (e, st) => Text('Error: $e'),
         ),
         const SizedBox(height: 24),
         const Text('Active NGOs', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
         const SizedBox(height: 8),
-        ListTile(
-          title: const Text('Goonj Lucknow'),
-          subtitle: const Text('Volunteers: 145'),
-          trailing: TextButton(
-            child: const Text('Suspend', style: TextStyle(color: Colors.red)),
-            onPressed: () {
-              // TODO: Suspend NGO logic in Firestore
-            },
+        activeAsync.when(
+          data: (ngos) => ngos.isEmpty ? const Text('No active NGOs') : Column(
+            children: ngos.map((ngo) => ListTile(
+              title: Text(ngo.name),
+              subtitle: Text('Volunteers: ${ngo.volunteerCount}'),
+              trailing: TextButton(
+                child: const Text('Suspend', style: TextStyle(color: Colors.red)),
+                onPressed: () {
+                  ref.read(ngosDatasourceProvider).updateNgoStatus(ngo.id, 'suspended');
+                },
+              ),
+            )).toList(),
           ),
-        ),
-        ListTile(
-          title: const Text('HelpAge India'),
-          subtitle: const Text('Volunteers: 89'),
-          trailing: TextButton(
-            child: const Text('Suspend', style: TextStyle(color: Colors.red)),
-            onPressed: () {},
-          ),
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (e, st) => Text('Error: $e'),
         ),
       ],
     );

@@ -44,4 +44,16 @@ class UserRepository {
       throw const DatabaseFailure('Failed to fetch user profile from database.');
     }
   }
+
+  /// Streams the list of Coordinators and NGO Admins for a specific NGO.
+  Stream<List<Volunteer>> streamNgoStaff(String ngoId) {
+    return _firestore
+        .collection(AppConstants.volunteersCollection)
+        .where('primaryNgoId', isEqualTo: ngoId)
+        .where('platformRole', whereIn: ['CO', 'NA'])
+        .snapshots()
+        .map((snapshot) => snapshot.docs
+            .map((doc) => Volunteer.fromJson(doc.data(), doc.id))
+            .toList());
+  }
 }
