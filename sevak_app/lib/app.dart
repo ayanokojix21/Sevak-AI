@@ -11,6 +11,8 @@ import 'features/dashboard/presentation/pages/dashboard_page.dart';
 import 'features/needs/presentation/pages/ai_processing_page.dart';
 import 'features/needs/presentation/pages/need_confirmation_page.dart';
 import 'features/needs/presentation/pages/submit_need_page.dart';
+import 'features/dashboard/presentation/pages/super_admin_page.dart';
+import 'features/dashboard/presentation/pages/ngo_admin_page.dart';
 
 class SevakApp extends ConsumerWidget {
   const SevakApp({super.key});
@@ -84,6 +86,17 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/dashboard',
         builder: (context, state) => const DashboardPage(),
+      ),
+      GoRoute(
+        path: '/super-admin',
+        builder: (context, state) => const SuperAdminPage(),
+      ),
+      GoRoute(
+        path: '/ngo-admin/:id',
+        builder: (context, state) {
+          final ngoId = state.pathParameters['id']!;
+          return NgoAdminPage(ngoId: ngoId);
+        },
       ),
       // TODO: Phase 4 - Task routes
     ],

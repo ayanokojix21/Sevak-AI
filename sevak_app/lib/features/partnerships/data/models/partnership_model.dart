@@ -14,13 +14,13 @@ class PartnershipModel extends PartnershipEntity {
   factory PartnershipModel.fromJson(Map<String, dynamic> json, String id) {
     return PartnershipModel(
       id: id,
-      ngoA: json['ngoA'] ?? '',
-      ngoB: json['ngoB'] ?? '',
+      ngoA: json['ngoA'] as String? ?? '',
+      ngoB: json['ngoB'] as String? ?? '',
       status: PartnershipStatus.values.firstWhere(
         (e) => e.name == (json['status'] ?? 'pending'),
         orElse: () => PartnershipStatus.pending,
       ),
-      sharedSkills: List<String>.from(json['sharedSkills'] ?? []),
+      sharedSkills: List<String>.from(json['sharedSkills'] as Iterable? ?? []),
       consentDate: (json['consentDate'] as Timestamp?)?.toDate() ?? DateTime.now(),
     );
   }

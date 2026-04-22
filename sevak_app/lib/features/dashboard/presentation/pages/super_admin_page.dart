@@ -1,0 +1,171 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+class SuperAdminPage extends ConsumerStatefulWidget {
+  const SuperAdminPage({super.key});
+
+  @override
+  ConsumerState<SuperAdminPage> createState() => _SuperAdminPageState();
+}
+
+class _SuperAdminPageState extends ConsumerState<SuperAdminPage> {
+  @override
+  Widget build(BuildContext context) {
+    return DefaultTabController(
+      length: 2,
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Super Admin Platform'),
+          bottom: const TabBar(
+            tabs: [
+              Tab(icon: Icon(Icons.business_center), text: 'NGO Management'),
+              Tab(icon: Icon(Icons.analytics), text: 'Platform Analytics'),
+            ],
+          ),
+        ),
+        body: const TabBarView(
+          children: [
+            _NgoManagementTab(),
+            _PlatformAnalyticsTab(),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _NgoManagementTab extends ConsumerWidget {
+  const _NgoManagementTab();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        const Text('Pending Approvals', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+        const SizedBox(height: 8),
+        Card(
+          child: ListTile(
+            leading: const Icon(Icons.business, color: Colors.orange),
+            title: const Text('Save The Children - Delhi'),
+            subtitle: const Text('Requested 2 hours ago'),
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.check_circle, color: Colors.green),
+                  tooltip: 'Approve',
+                  onPressed: () {
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('NGO Approved')));
+                  },
+                ),
+                IconButton(
+                  icon: const Icon(Icons.cancel, color: Colors.red),
+                  tooltip: 'Reject',
+                  onPressed: () {},
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 24),
+        const Text('Active NGOs', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+        const SizedBox(height: 8),
+        ListTile(
+          title: const Text('Goonj Lucknow'),
+          subtitle: const Text('Volunteers: 145'),
+          trailing: TextButton(
+            child: const Text('Suspend', style: TextStyle(color: Colors.red)),
+            onPressed: () {
+              // TODO: Suspend NGO logic in Firestore
+            },
+          ),
+        ),
+        ListTile(
+          title: const Text('HelpAge India'),
+          subtitle: const Text('Volunteers: 89'),
+          trailing: TextButton(
+            child: const Text('Suspend', style: TextStyle(color: Colors.red)),
+            onPressed: () {},
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _PlatformAnalyticsTab extends ConsumerWidget {
+  const _PlatformAnalyticsTab();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('Aggregated Platform Metrics', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: _buildStatCard('Total NGOs', '42', Colors.blue),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: _buildStatCard('Total Volunteers', '1,204', Colors.purple),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: _buildStatCard('Needs Resolved', '8,901', Colors.green),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: _buildStatCard('Cross-NGO Tasks', '312', Colors.orange),
+              ),
+            ],
+          ),
+          const Spacer(),
+          Center(
+            child: ElevatedButton.icon(
+              icon: const Icon(Icons.campaign),
+              label: const Text('Platform-Wide Emergency Broadcast'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red.shade100,
+                foregroundColor: Colors.red.shade900,
+              ),
+              onPressed: () {
+                // TODO: Send global FCM broadcast ignoring all opt-outs
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Broadcast sent!')));
+              },
+            ),
+          ),
+          const SizedBox(height: 24),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatCard(String title, String value, Color color) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: color.withAlpha(26),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withAlpha(51)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(title, style: TextStyle(fontSize: 12, color: color)),
+          const SizedBox(height: 8),
+          Text(value, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+        ],
+      ),
+    );
+  }
+}

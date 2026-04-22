@@ -14,11 +14,11 @@ class CrossNgoTaskModel extends CrossNgoTaskEntity {
   factory CrossNgoTaskModel.fromJson(Map<String, dynamic> json, String id) {
     return CrossNgoTaskModel(
       id: id,
-      needId: json['needId'] ?? '',
-      sourceNgoId: json['sourceNgoId'] ?? '',
-      volunteerNgoId: json['volunteerNgoId'] ?? '',
-      volunteerUid: json['volunteerUid'],
-      volunteerConsentGiven: json['volunteerConsentGiven'] ?? false,
+      needId: json['needId'] as String? ?? '',
+      sourceNgoId: json['sourceNgoId'] as String? ?? '',
+      volunteerNgoId: json['volunteerNgoId'] as String? ?? '',
+      volunteerUid: json['volunteerUid'] as String?,
+      volunteerConsentGiven: json['volunteerConsentGiven'] as bool? ?? false,
       status: CrossNgoTaskStatus.values.firstWhere(
         (e) => e.name == (json['status'] ?? 'requested'),
         orElse: () => CrossNgoTaskStatus.requested,

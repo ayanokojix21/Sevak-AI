@@ -60,7 +60,8 @@ class AuthController extends StateNotifier<AsyncValue<void>> {
           name: name,
           email: email,
           phone: phone,
-          ngoId: '', // Unassigned initially
+          primaryNgoId: '',
+          ngoMemberships: const [], // Unassigned initially
           skills: [], // Can be filled later
           createdAt: DateTime.now(),
         );
@@ -88,7 +89,8 @@ class AuthController extends StateNotifier<AsyncValue<void>> {
             name: cred.user!.displayName ?? 'New Volunteer',
             email: cred.user!.email ?? '',
             phone: cred.user!.phoneNumber ?? '',
-            ngoId: '',
+            primaryNgoId: '',
+          ngoMemberships: const [],
             skills: [],
             createdAt: DateTime.now(),
           );

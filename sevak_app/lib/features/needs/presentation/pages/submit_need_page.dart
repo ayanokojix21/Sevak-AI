@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:sevak_app/providers/need_providers.dart';
+import 'package:sevak_app/features/auth/presentation/controllers/auth_controller.dart';
 
 class SubmitNeedPage extends ConsumerStatefulWidget {
   const SubmitNeedPage({super.key});
@@ -105,11 +106,15 @@ class _SubmitNeedPageState extends ConsumerState<SubmitNeedPage> {
     // Pop the loading dialog
     if (mounted) Navigator.pop(context);
 
+    // Fetch volunteer profile to get primaryNgoId
+    final volunteerAsync = ref.read(volunteerProfileProvider);
+    final primaryNgoId = volunteerAsync.value?.primaryNgoId ?? 'unassigned';
+
     // Trigger submission
     ref.read(needControllerProvider.notifier).submitNeed(
           _textController.text.trim(),
           _selectedImage!,
-          'default_ngo', // In MVP, we can mock this or grab from volunteer profile
+          primaryNgoId,
           lat: lat,
           lng: lng,
         );

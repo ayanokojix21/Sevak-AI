@@ -61,6 +61,24 @@ class HomePage extends ConsumerWidget {
                     padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
                   ),
                 ),
+                const SizedBox(height: 16),
+                OutlinedButton.icon(
+                  onPressed: () => context.push('/super-admin'),
+                  icon: const Icon(Icons.admin_panel_settings),
+                  label: const Text('Super Admin Panel'),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                OutlinedButton.icon(
+                  onPressed: () => context.push('/ngo-admin/test-ngo-id'),
+                  icon: const Icon(Icons.business),
+                  label: const Text('NGO Admin Panel'),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                  ),
+                ),
               ],
             );
           },
