@@ -5,7 +5,7 @@ import '../../../../core/constants/app_constants.dart';
 import '../../../../core/errors/failures.dart';
 import '../../domain/entities/volunteer.dart';
 
-/// Riverpod provider for the UserRepository
+/// Riverpod provider for the UserRepository.
 final userRepositoryProvider = Provider<UserRepository>((ref) {
   return UserRepository(FirebaseFirestore.instance);
 });
@@ -45,6 +45,20 @@ class UserRepository {
     }
   }
 
+  /// Real-time stream of a volunteer profile. Used by StreamProvider.
+  Stream<Volunteer?> streamVolunteerProfile(String uid) {
+    return _firestore
+        .collection(AppConstants.volunteersCollection)
+        .doc(uid)
+        .snapshots()
+        .map((doc) {
+      if (doc.exists && doc.data() != null) {
+        return Volunteer.fromJson(doc.data()!, doc.id);
+      }
+      return null;
+    });
+  }
+
   /// Streams the list of Coordinators and NGO Admins for a specific NGO.
   Stream<List<Volunteer>> streamNgoStaff(String ngoId) {
     return _firestore
@@ -55,5 +69,24 @@ class UserRepository {
         .map((snapshot) => snapshot.docs
             .map((doc) => Volunteer.fromJson(doc.data(), doc.id))
             .toList());
+  }
+
+  /// Streams ALL members (including volunteers) for a specific NGO.
+  Stream<List<Volunteer>> streamNgoMembers(String ngoId) {
+    return _firestore
+        .collection(AppConstants.volunteersCollection)
+        .where('primaryNgoId', isEqualTo: ngoId)
+        .snapshots()
+        .map((snapshot) => snapshot.docs
+            .map((doc) => Volunteer.fromJson(doc.data(), doc.id))
+            .toList());
+  }
+
+  /// Updates only the cross-NGO consent flag for a volunteer.
+  Future<void> updateCrossNgoConsent(String uid, bool consent) async {
+    await _firestore
+        .collection(AppConstants.volunteersCollection)
+        .doc(uid)
+        .update({'isAvailable': consent});
   }
 }
