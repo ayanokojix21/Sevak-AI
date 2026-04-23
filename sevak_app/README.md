@@ -11,13 +11,13 @@ To contribute to this project, you need to set up your local development environ
 - Android Studio / VS Code
 - A valid Java Keystore (Debug Keystore) on your local machine.
 
-### 2. Firebase Setup (CRITICAL)
-For security reasons, the Firebase configuration file (`google-services.json`) is **NOT** included in this repository. 
+### 2. Environment & Firebase Setup (CRITICAL)
+For security reasons, environment variables and Firebase configuration files are **NOT** included in this repository. 
 
-1. Reach out to the project administrator to be added to the **SevakAI Firebase Project**.
-2. Once you have access, go to Project Settings in the Firebase Console.
-3. Download the `google-services.json` file.
-4. Place the file inside the `android/app/` directory of this project.
+1. **Environment Variables**: Copy `.env.example` to a new file named `.env` in the root directory and fill in the required API keys (contact the administrator for these).
+2. **Firebase Config**: Reach out to the project administrator to get the following two files:
+   - `google-services.json`: Place this inside the `android/app/` directory.
+   - `firebase_options.dart`: Place this inside the `lib/` directory.
 
 ### 3. Google Sign-In Authentication Setup
 Google Sign-In will **crash** on your local machine if your local Android Debug SHA-1 fingerprint is not registered in our Firebase Console.
