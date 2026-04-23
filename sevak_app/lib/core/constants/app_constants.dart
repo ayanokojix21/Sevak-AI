@@ -4,6 +4,11 @@ class AppConstants {
   static const String needsCollection = 'needs';
   static const String volunteersCollection = 'volunteers';
   static const String ngosCollection = 'ngos';
+  static const String ngoInvitesCollection = 'ngoInvites';
+  static const String joinRequestsCollection = 'joinRequests';
+  static const String partnershipsCollection = 'partnerships';
+  static const String crossNgoTasksCollection = 'crossNgoTasks';
+  static const String platformConfigCollection = 'platformConfig';
 
   static const String statusRaw = 'RAW';
   static const String statusScored = 'SCORED';
