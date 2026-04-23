@@ -6,13 +6,16 @@ import 'core/theme/app_theme.dart';
 import 'features/auth/presentation/controllers/auth_controller.dart';
 import 'features/auth/presentation/pages/login_page.dart';
 import 'features/auth/presentation/pages/register_page.dart';
+import 'features/auth/presentation/pages/profile_setup_page.dart';
 import 'features/home/presentation/pages/home_page.dart';
 import 'features/dashboard/presentation/pages/dashboard_page.dart';
+import 'features/dashboard/presentation/pages/super_admin_page.dart';
+import 'features/dashboard/presentation/pages/ngo_admin_page.dart';
 import 'features/needs/presentation/pages/ai_processing_page.dart';
 import 'features/needs/presentation/pages/need_confirmation_page.dart';
 import 'features/needs/presentation/pages/submit_need_page.dart';
-import 'features/dashboard/presentation/pages/super_admin_page.dart';
-import 'features/dashboard/presentation/pages/ngo_admin_page.dart';
+import 'features/ngos/presentation/pages/ngo_discovery_page.dart';
+import 'features/ngos/presentation/pages/register_ngo_page.dart';
 
 class SevakApp extends ConsumerWidget {
   const SevakApp({super.key});
@@ -37,18 +40,44 @@ final splashDelayProvider = FutureProvider<void>((ref) async {
 final routerProvider = Provider<GoRouter>((ref) {
   final authState = ref.watch(authStateProvider);
   final splashDelay = ref.watch(splashDelayProvider);
+  final profileAsync = ref.watch(volunteerProfileProvider);
 
   return GoRouter(
     initialLocation: '/',
     redirect: (context, state) {
-      // Wait for auth to initialize AND minimum splash duration
+      // Wait for auth + splash
       if (authState.isLoading || splashDelay.isLoading) return '/';
 
       final isLoggedIn = authState.value != null;
-      final isLoggingIn = state.matchedLocation == '/login' || state.matchedLocation == '/register';
+      final loc = state.matchedLocation;
+      final isAuthRoute = loc == '/login' || loc == '/register';
 
-      if (!isLoggedIn && !isLoggingIn) return '/login';
-      if (isLoggedIn && (isLoggingIn || state.matchedLocation == '/')) return '/home';
+      // Not logged in → force login (except splash)
+      if (!isLoggedIn && !isAuthRoute) return '/login';
+
+      // Logged in → redirect away from auth routes
+      if (isLoggedIn && (isAuthRoute || loc == '/')) {
+        return '/home';
+      }
+
+      // Route guards — block unauthorized access
+      if (isLoggedIn) {
+        final profile = profileAsync.value;
+        final role = profile?.platformRole ?? 'CU';
+
+        // SA-only routes
+        if (loc == '/super-admin' && role != 'SA') return '/home';
+
+        // Dashboard — CO, NA, SA only
+        if (loc == '/dashboard' && !['CO', 'NA', 'SA'].contains(role)) {
+          return '/home';
+        }
+
+        // NGO Admin — NA, SA only
+        if (loc.startsWith('/ngo-admin') && !['NA', 'SA'].contains(role)) {
+          return '/home';
+        }
+      }
 
       return null;
     },
@@ -66,10 +95,14 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const RegisterPage(),
       ),
       GoRoute(
+        path: '/profile-setup',
+        builder: (context, state) => const ProfileSetupPage(),
+      ),
+      GoRoute(
         path: '/home',
         builder: (context, state) => const HomePage(),
       ),
-      // Phase 2 - Need submission routes
+      // Need submission
       GoRoute(
         path: '/submit-need',
         builder: (context, state) => const SubmitNeedPage(),
@@ -82,15 +115,17 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/need-confirmation',
         builder: (context, state) => const NeedConfirmationPage(),
       ),
-      // Phase 3 — Coordinator Dashboard
+      // Coordinator Dashboard
       GoRoute(
         path: '/dashboard',
         builder: (context, state) => const DashboardPage(),
       ),
+      // Super Admin
       GoRoute(
         path: '/super-admin',
         builder: (context, state) => const SuperAdminPage(),
       ),
+      // NGO Admin
       GoRoute(
         path: '/ngo-admin/:id',
         builder: (context, state) {
@@ -98,10 +133,20 @@ final routerProvider = Provider<GoRouter>((ref) {
           return NgoAdminPage(ngoId: ngoId);
         },
       ),
-      // TODO: Phase 4 - Task routes
+      // NGO Discovery & Registration
+      GoRoute(
+        path: '/discover-ngos',
+        builder: (context, state) => const NgoDiscoveryPage(),
+      ),
+      GoRoute(
+        path: '/register-ngo',
+        builder: (context, state) => const RegisterNgoPage(),
+      ),
     ],
   );
 });
+
+// ── Splash Screen ────────────────────────────────────────────────────────────
 
 class _SplashPage extends StatefulWidget {
   const _SplashPage();
@@ -110,7 +155,8 @@ class _SplashPage extends StatefulWidget {
   State<_SplashPage> createState() => _SplashPageState();
 }
 
-class _SplashPageState extends State<_SplashPage> with SingleTickerProviderStateMixin {
+class _SplashPageState extends State<_SplashPage>
+    with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _scaleAnimation;
   late Animation<double> _fadeAnimation;
@@ -145,7 +191,6 @@ class _SplashPageState extends State<_SplashPage> with SingleTickerProviderState
     return Scaffold(
       body: Stack(
         children: [
-          // Background Gradient
           Container(
             decoration: const BoxDecoration(
               gradient: LinearGradient(
@@ -153,14 +198,12 @@ class _SplashPageState extends State<_SplashPage> with SingleTickerProviderState
                 end: Alignment.bottomRight,
                 colors: [
                   AppColors.bgBase,
-                  Color(0xFF1E1C44), // Subtle purple tint
+                  Color(0xFF1E1C44),
                   AppColors.bgBase,
                 ],
               ),
             ),
           ),
-          
-          // Decorative Orbs
           Positioned(
             top: -100,
             left: -100,
@@ -169,7 +212,7 @@ class _SplashPageState extends State<_SplashPage> with SingleTickerProviderState
               height: 300,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: AppColors.primaryDark.withAlpha(76), // 0.3 opacity
+                color: AppColors.primaryDark.withAlpha(76),
               ),
             ),
           ),
@@ -181,12 +224,10 @@ class _SplashPageState extends State<_SplashPage> with SingleTickerProviderState
               height: 400,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: AppColors.accent.withAlpha(38), // 0.15 opacity
+                color: AppColors.accent.withAlpha(38),
               ),
             ),
           ),
-
-          // Content
           Center(
             child: FadeTransition(
               opacity: _fadeAnimation,
@@ -202,19 +243,21 @@ class _SplashPageState extends State<_SplashPage> with SingleTickerProviderState
                     const SizedBox(height: 24),
                     Text(
                       'SevakAI',
-                      style: Theme.of(context).textTheme.displayLarge?.copyWith(
-                            color: AppColors.textPrimary,
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: 1.5,
-                          ),
+                      style:
+                          Theme.of(context).textTheme.displayLarge?.copyWith(
+                                color: AppColors.textPrimary,
+                                fontWeight: FontWeight.w700,
+                                letterSpacing: 1.5,
+                              ),
                     ),
                     const SizedBox(height: 8),
                     Text(
                       'Volunteer Coordination Platform',
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: AppColors.textSecondary,
-                            fontSize: 16,
-                          ),
+                      style:
+                          Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                color: AppColors.textSecondary,
+                                fontSize: 16,
+                              ),
                     ),
                   ],
                 ),

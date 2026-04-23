@@ -2,6 +2,13 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     
+    // ══════════════════════════════════════════════════════════════════════════
+    // IMPORTANT: These rules require Firebase Custom Claims (role, ngoId).
+    // Custom Claims must be set via Firebase Admin SDK / Cloud Functions.
+    // DO NOT deploy until the Cloud Function is ready.
+    // Currently running in TEST MODE — these rules are for documentation.
+    // ══════════════════════════════════════════════════════════════════════════
+
     // Core helper functions
     function isAuthenticated() {
       return request.auth != null;
@@ -13,24 +20,16 @@ service cloud.firestore {
       return isAuthenticated() && request.auth.token.ngoId == ngoId;
     }
     
-    // 1. Super Admin (SA)
-    // Has broad platform-level access but limited individual need/volunteer access (for privacy)
+    // Role checks
     function isSuperAdmin() {
       return hasRole('SA');
     }
-    
-    // 2. NGO Admin (NA)
     function isNgoAdmin(ngoId) {
       return hasRole('NA') && belongsToNgo(ngoId);
     }
-    
-    // 3. Coordinator (CO)
     function isCoordinator(ngoId) {
       return hasRole('CO') && belongsToNgo(ngoId);
     }
-    
-    // 4. Volunteer (VL)
-    // Volunteers may have memberships in multiple NGOs (based on DB arrays, but we check their self-ownership too)
     function isVolunteer() {
       return hasRole('VL');
     }
@@ -38,59 +37,77 @@ service cloud.firestore {
       return isAuthenticated() && request.auth.uid == resource.data.uid;
     }
 
-    // -- Collections --
-
-    // NGOs
+    // ── NGOs ─────────────────────────────────────────────────────────────────
     match /ngos/{ngoId} {
-      // SAs can do anything to NGOs
-      // NAs can read/update their own NGO
-      // COs and VLs can read their own NGO
-      allow read: if isSuperAdmin() || belongsToNgo(ngoId);
-      allow create, delete: if isSuperAdmin();
+      // Anyone authenticated can READ active NGOs (for discovery page)
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated(); // Anyone can register (status: pending)
+      allow delete: if isSuperAdmin();
       allow update: if isSuperAdmin() || isNgoAdmin(ngoId);
     }
 
-    // Needs (Community & Task data)
+    // ── Needs ────────────────────────────────────────────────────────────────
     match /needs/{needId} {
-      // CUs can read/update their own created needs (assuming we link it to their phone-auth UID or similar via submittedBy)
-      // COs and NAs can read/write needs assigned to their NGO
-      // VLs can read needs assigned to them specifically
-      allow create: if isAuthenticated(); // Anyone authenticated (CU or VL) can submit a need
-      allow read: if (isAuthenticated() && resource.data.submittedBy == request.auth.uid) || // CU/VL who submitted it
-                     isCoordinator(resource.data.ngoId) || // CO of the NGO
-                     isNgoAdmin(resource.data.ngoId) || // NA of the NGO
-                     (isVolunteer() && resource.data.assignedTo == request.auth.uid); // Assigned VL
+      allow create: if isAuthenticated();
+      allow read: if (isAuthenticated() && resource.data.submittedBy == request.auth.uid) ||
+                     isCoordinator(resource.data.ngoId) ||
+                     isNgoAdmin(resource.data.ngoId) ||
+                     isSuperAdmin() ||
+                     (isVolunteer() && resource.data.assignedTo == request.auth.uid);
       allow update: if isCoordinator(resource.data.ngoId) || 
                        isNgoAdmin(resource.data.ngoId) ||
-                       (isVolunteer() && resource.data.assignedTo == request.auth.uid) || 
+                       isSuperAdmin() ||
+                       (isVolunteer() && resource.data.assignedTo == request.auth.uid) ||
                        (isAuthenticated() && resource.data.submittedBy == request.auth.uid);
-      allow delete: if isNgoAdmin(resource.data.ngoId) || isCoordinator(resource.data.ngoId);
+      allow delete: if isNgoAdmin(resource.data.ngoId) || isCoordinator(resource.data.ngoId) || isSuperAdmin();
     }
 
-    // Volunteers
+    // ── Volunteers ───────────────────────────────────────────────────────────
     match /volunteers/{userId} {
-      // VLs can read/write their own profile
-      // NAs and COs can read/write VLs within their NGO
       allow read, update: if (isAuthenticated() && request.auth.uid == userId) || 
                               isNgoAdmin(resource.data.primaryNgoId) || 
-                              isCoordinator(resource.data.primaryNgoId);
+                              isCoordinator(resource.data.primaryNgoId) ||
+                              isSuperAdmin();
       allow create: if isAuthenticated() && request.auth.uid == userId;
-      allow delete: if (isAuthenticated() && request.auth.uid == userId) || isNgoAdmin(resource.data.primaryNgoId);
+      allow delete: if (isAuthenticated() && request.auth.uid == userId) || 
+                       isNgoAdmin(resource.data.primaryNgoId) ||
+                       isSuperAdmin();
     }
 
-    // Partnerships
+    // ── NGO Invite Codes ─────────────────────────────────────────────────────
+    match /ngoInvites/{code} {
+      // Anyone authenticated can read (to verify codes)
+      allow read: if isAuthenticated();
+      // Only NA/SA can create invite codes
+      allow create: if isSuperAdmin() || hasRole('NA');
+      // Anyone can delete (single-use code consumed by volunteer)
+      allow delete: if isAuthenticated();
+      allow update: if isSuperAdmin() || hasRole('NA');
+    }
+
+    // ── Join Requests ────────────────────────────────────────────────────────
+    match /joinRequests/{requestId} {
+      // User can create their own join request
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      // User can read their own requests, NGO admin can read requests for their NGO
+      allow read: if (isAuthenticated() && resource.data.userId == request.auth.uid) ||
+                     isNgoAdmin(resource.data.ngoId) ||
+                     isSuperAdmin();
+      // Only NGO admin or SA can update (approve/reject)
+      allow update: if isNgoAdmin(resource.data.ngoId) || isSuperAdmin();
+      allow delete: if isSuperAdmin();
+    }
+
+    // ── Partnerships ─────────────────────────────────────────────────────────
     match /partnerships/{partnershipId} {
-      // SAs can see all partnerships
-      // NAs and COs can see partnerships where their NGO is either ngoA or ngoB
       allow read: if isSuperAdmin() || 
                      belongsToNgo(resource.data.ngoA) || 
                      belongsToNgo(resource.data.ngoB);
-                     
       allow create, update: if isNgoAdmin(request.resource.data.ngoA) || isNgoAdmin(request.resource.data.ngoB);
       allow delete: if isNgoAdmin(resource.data.ngoA) || isNgoAdmin(resource.data.ngoB) || isSuperAdmin();
     }
 
-    // Cross-NGO Tasks
+    // ── Cross-NGO Tasks ──────────────────────────────────────────────────────
     match /crossNgoTasks/{taskId} {
       allow read: if isSuperAdmin() || 
                      belongsToNgo(resource.data.sourceNgoId) || 
@@ -101,10 +118,16 @@ service cloud.firestore {
                                (isVolunteer() && resource.data.volunteerUid == request.auth.uid);
     }
 
-    // Platform Metrics
+    // ── Platform Config ──────────────────────────────────────────────────────
+    match /platformConfig/{docId} {
+      allow read: if isAuthenticated(); // SA list readable to check SA status
+      allow write: if isSuperAdmin();
+    }
+
+    // ── Platform Metrics ─────────────────────────────────────────────────────
     match /platformMetrics/{metricId} {
       allow read: if isSuperAdmin();
-      allow write: if false; // Only updated via Cloud Functions / backend processes
+      allow write: if false; // Only via Cloud Functions
     }
   }
 }
