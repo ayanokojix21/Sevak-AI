@@ -1,13 +1,21 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../domain/entities/ngo_entity.dart';
 
+/// Firestore-serializable model for the canonical NgoEntity.
 class NgoModel extends NgoEntity {
   const NgoModel({
     required super.id,
     required super.name,
-    required super.status,
+    super.status,
+    super.description,
+    super.adminUid,
+    super.coordinatorUid,
+    super.city,
+    super.hqLat,
+    super.hqLng,
+    super.volunteerCount,
+    super.operatingAreas,
+    super.sharedSkillCategories,
     required super.createdAt,
-    super.volunteerCount = 0,
   });
 
   factory NgoModel.fromJson(Map<String, dynamic> json, String id) {
@@ -15,8 +23,18 @@ class NgoModel extends NgoEntity {
       id: id,
       name: json['name'] as String? ?? 'Unnamed NGO',
       status: json['status'] as String? ?? 'pending',
-      volunteerCount: json['volunteerCount'] as int? ?? 0,
-      createdAt: (json['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      description: json['description'] as String? ?? '',
+      adminUid: json['adminUid'] as String? ?? json['coordinatorUid'] as String? ?? '',
+      coordinatorUid: json['coordinatorUid'] as String? ?? json['adminUid'] as String? ?? '',
+      city: json['city'] as String? ?? '',
+      hqLat: (json['hqLat'] as num?)?.toDouble() ?? 0.0,
+      hqLng: (json['hqLng'] as num?)?.toDouble() ?? 0.0,
+      volunteerCount: (json['volunteerCount'] as num?)?.toInt() ?? 0,
+      operatingAreas: (json['operatingAreas'] as List<dynamic>?)?.cast<String>() ?? [],
+      sharedSkillCategories: (json['sharedSkillCategories'] as List<dynamic>?)?.cast<String>() ?? [],
+      createdAt: json['createdAt'] != null
+          ? DateTime.tryParse(json['createdAt'].toString()) ?? DateTime.now()
+          : DateTime.now(),
     );
   }
 
@@ -24,8 +42,16 @@ class NgoModel extends NgoEntity {
     return {
       'name': name,
       'status': status,
+      'description': description,
+      'adminUid': adminUid,
+      'coordinatorUid': coordinatorUid,
+      'city': city,
+      'hqLat': hqLat,
+      'hqLng': hqLng,
       'volunteerCount': volunteerCount,
-      'createdAt': Timestamp.fromDate(createdAt),
+      'operatingAreas': operatingAreas,
+      'sharedSkillCategories': sharedSkillCategories,
+      'createdAt': createdAt.toIso8601String(),
     };
   }
 }
