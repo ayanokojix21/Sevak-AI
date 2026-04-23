@@ -1,6 +1,7 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
-import 'package:sevak_app/core/config/env_config.dart';
+import '../../../../core/config/env_config.dart';
 import 'dart:typed_data';
 
 class GeminiDatasource {
@@ -39,22 +40,31 @@ If a field cannot be determined, use "UNKNOWN" for strings or 0 for numbers.
 If the image contains Hindi or Urdu text, transliterate to English.
 ''';
 
+    debugPrint('[GeminiDatasource] Starting analysis with model: ${EnvConfig.geminiModel}');
+    debugPrint('[GeminiDatasource] API key present: ${EnvConfig.geminiApiKey.isNotEmpty}');
+    debugPrint('[GeminiDatasource] Image bytes: ${imageBytes.length}');
+
     final content = [
       Content.multi([
         TextPart(prompt),
-        DataPart('image/jpeg', Uint8List.fromList(imageBytes)), // Assuming jpeg from compression
+        DataPart('image/jpeg', Uint8List.fromList(imageBytes)),
       ])
     ];
 
     try {
       final response = await _model.generateContent(content);
       var responseText = response.text ?? '';
-      
-      // Clean up markdown if Gemini hallucinates code blocks
+
+      debugPrint('[GeminiDatasource] Raw response length: ${responseText.length}');
+      debugPrint('[GeminiDatasource] Raw response: ${responseText.substring(0, responseText.length.clamp(0, 500))}');
+
+      // Clean up markdown if Gemini wraps it in code blocks
       responseText = responseText.replaceAll('```json', '').replaceAll('```', '').trim();
-      
+
       return jsonDecode(responseText) as Map<String, dynamic>;
-    } catch (e) {
+    } catch (e, st) {
+      debugPrint('[GeminiDatasource] ERROR: $e');
+      debugPrint('[GeminiDatasource] Stack: $st');
       throw Exception('Gemini extraction failed: $e');
     }
   }
