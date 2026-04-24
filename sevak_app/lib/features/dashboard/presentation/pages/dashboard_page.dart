@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/snackbar_utils.dart';
 import '../../../../providers/dashboard_providers.dart';
+import '../../../../providers/matching_providers.dart';
 import '../../../needs/domain/entities/need_entity.dart';
 import '../controllers/dashboard_controller.dart';
 import '../widgets/need_detail_panel.dart';
@@ -62,6 +63,16 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
     ref.listen<AsyncValue<void>>(dashboardControllerProvider, (prev, next) {
       if (next.hasError) {
         SnackbarUtils.showError(context, next.error.toString());
+      }
+    });
+
+    // Listen for matching results
+    ref.listen<AsyncValue<String?>>(matchingControllerProvider, (prev, next) {
+      if (next.hasError) {
+        SnackbarUtils.showError(context, 'Matching failed: ${next.error}');
+      } else if (next.hasValue && next.value != null && !(prev?.isLoading ?? false)) {
+        SnackbarUtils.showSuccess(context, 'Volunteer matched! ✅');
+        ref.read(matchingControllerProvider.notifier).reset();
       }
     });
 
@@ -342,6 +353,8 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
     String? coordinatorNgoId, {
     VoidCallback? onClose,
   }) {
+    final isMatching = ref.watch(matchingControllerProvider).isLoading;
+
     return FutureBuilder<String>(
       future: ref.read(dashboardControllerProvider.notifier).getNgoName(need.ngoId),
       builder: (context, snapshot) {
@@ -351,6 +364,10 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
           need: need,
           claimedByNgoName: ngoName,
           coordinatorNgoId: coordinatorNgoId,
+          isMatching: isMatching,
+          onMatch: coordinatorNgoId != null && need.ngoId == coordinatorNgoId
+              ? () => ref.read(matchingControllerProvider.notifier).matchForNeed(need)
+              : null,
           onClaim: coordinatorNgoId != null
               ? () async {
                   await ref.read(dashboardControllerProvider.notifier).claimNeed(

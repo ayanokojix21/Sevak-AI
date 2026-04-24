@@ -8,16 +8,32 @@ import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/snackbar_utils.dart';
 import '../../../auth/presentation/controllers/auth_controller.dart';
 import '../../../auth/data/repositories/user_repository.dart';
+import '../../../tasks/data/services/task_notification_service.dart';
 import '../../../../providers/ngo_providers.dart';
+import '../../../../providers/task_providers.dart';
 
 /// Role-aware home page — renders role-specific content sections.
-class HomePage extends ConsumerWidget {
+class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final profileAsync = ref.watch(volunteerProfileProvider);
+  ConsumerState<HomePage> createState() => _HomePageState();
+}
 
+class _HomePageState extends ConsumerState<HomePage> {
+  @override
+  void initState() {
+    super.initState();
+    // Start Firestore listener for task notifications (Phase 4F)
+    final uid = ref.read(authStateProvider).value?.uid;
+    if (uid != null) {
+      TaskNotificationService.startTaskListener(uid);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final profileAsync = ref.watch(volunteerProfileProvider);
     return profileAsync.when(
       data: (profile) {
         if (profile == null) {
@@ -193,6 +209,23 @@ class HomePage extends ConsumerWidget {
                       color: AppColors.warning,
                     ),
                   const SizedBox(height: 12),
+
+                  // My Tasks card with real-time badge count
+                  Consumer(builder: (context, ref, _) {
+                    final tasksAsync = ref.watch(myTasksStreamProvider);
+                    final count = tasksAsync.maybeWhen(data: (t) => t.length, orElse: () => 0);
+                    return _ActionCard(
+                      icon: Icons.task_alt,
+                      title: 'My Tasks${count > 0 ? " ($count)" : ""}',
+                      subtitle: count > 0
+                          ? '$count active task${count == 1 ? "" : "s"} assigned to you'
+                          : 'No active tasks right now',
+                      color: PlatformRole.VL.color,
+                      onTap: () => context.push('/my-tasks'),
+                    );
+                  }),
+                  const SizedBox(height: 12),
+
                   // Availability toggle
                   ClipRRect(
                     borderRadius: BorderRadius.circular(14),
