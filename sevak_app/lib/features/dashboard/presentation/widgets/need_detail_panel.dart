@@ -3,6 +3,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/widgets/need_widgets.dart';
 import '../../../needs/domain/entities/need_entity.dart';
 
 /// Detail panel displayed when a need is selected on the map or table.
@@ -13,6 +14,8 @@ class NeedDetailPanel extends StatelessWidget {
   final String? coordinatorNgoId;
   final VoidCallback? onClaim;
   final VoidCallback? onClose;
+  final Future<void> Function()? onMatch; // triggers matching engine
+  final bool isMatching;                  // true while Gemini is running
 
   const NeedDetailPanel({
     super.key,
@@ -21,6 +24,8 @@ class NeedDetailPanel extends StatelessWidget {
     this.coordinatorNgoId,
     this.onClaim,
     this.onClose,
+    this.onMatch,
+    this.isMatching = false,
   });
 
   @override
@@ -140,9 +145,9 @@ class NeedDetailPanel extends StatelessWidget {
                   // Need type badge
                   Row(
                     children: [
-                      _TypeChip(needType: need.needType),
+                      NeedTypeChip(needType: need.needType),
                       const SizedBox(width: 8),
-                      _StatusChip(status: need.status),
+                      StatusBadge(status: need.status),
                     ],
                   ),
                   const SizedBox(height: 16),
@@ -222,26 +227,25 @@ class NeedDetailPanel extends StatelessWidget {
 
                   const SizedBox(height: 20),
 
-                  // Claim button (only if unclaimed and coordinator has an NGO)
+                  // ── Claim button ──────────────────────────────────────────
                   if (!isClaimed && coordinatorNgoId != null && onClaim != null)
                     SizedBox(
                       height: 48,
                       child: FilledButton.icon(
                         onPressed: onClaim,
                         icon: const Icon(Icons.flag_rounded, size: 20),
-                        label: const Text(
-                          'Claim for My NGO',
-                          style: TextStyle(fontWeight: FontWeight.w600),
-                        ),
+                        label: const Text('Claim for My NGO',
+                            style: TextStyle(fontWeight: FontWeight.w600)),
                         style: FilledButton.styleFrom(
                           backgroundColor: AppColors.accent,
                           foregroundColor: AppColors.bgBase,
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
+                              borderRadius: BorderRadius.circular(12)),
                         ),
                       ),
                     ),
+
+                  // ── Claimed banner ────────────────────────────────────────
                   if (isClaimedByMe)
                     Container(
                       padding: const EdgeInsets.all(12),
@@ -255,16 +259,41 @@ class NeedDetailPanel extends StatelessWidget {
                         children: [
                           Icon(Icons.check_circle, color: AppColors.accent, size: 18),
                           SizedBox(width: 8),
-                          Text(
-                            'Claimed by your NGO',
-                            style: TextStyle(
-                              color: AppColors.accent,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
+                          Text('Claimed by your NGO',
+                              style: TextStyle(
+                                  color: AppColors.accent, fontWeight: FontWeight.w600)),
                         ],
                       ),
                     ),
+
+                  // ── Find Best Volunteer button ────────────────────────────
+                  if (isClaimedByMe &&
+                      (need.status == 'SCORED' || need.status == 'RAW') &&
+                      onMatch != null) ...[
+                    const SizedBox(height: 10),
+                    SizedBox(
+                      height: 48,
+                      child: FilledButton.icon(
+                        onPressed: isMatching ? null : onMatch,
+                        icon: isMatching
+                            ? const SizedBox(
+                                width: 16, height: 16,
+                                child: CircularProgressIndicator(
+                                    strokeWidth: 2, color: Colors.white))
+                            : const Icon(Icons.auto_awesome, size: 18),
+                        label: Text(
+                          isMatching ? 'Matching...' : 'Find Best Volunteer',
+                          style: const TextStyle(fontWeight: FontWeight.w600),
+                        ),
+                        style: FilledButton.styleFrom(
+                          backgroundColor: AppColors.primary,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12)),
+                        ),
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -340,76 +369,3 @@ class _InfoRow extends StatelessWidget {
   }
 }
 
-class _TypeChip extends StatelessWidget {
-  final String needType;
-  const _TypeChip({required this.needType});
-
-  @override
-  Widget build(BuildContext context) {
-    final (icon, color) = switch (needType) {
-      'FOOD' => (Icons.restaurant_rounded, const Color(0xFFFF7043)),
-      'MEDICAL' => (Icons.local_hospital_rounded, const Color(0xFFEF5350)),
-      'SHELTER' => (Icons.home_rounded, const Color(0xFF42A5F5)),
-      'CLOTHING' => (Icons.checkroom_rounded, const Color(0xFFAB47BC)),
-      _ => (Icons.help_outline_rounded, const Color(0xFF78909C)),
-    };
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-      decoration: BoxDecoration(
-        color: color.withAlpha(25),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withAlpha(76)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 14, color: color),
-          const SizedBox(width: 4),
-          Text(
-            needType,
-            style: TextStyle(
-              color: color,
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _StatusChip extends StatelessWidget {
-  final String status;
-  const _StatusChip({required this.status});
-
-  @override
-  Widget build(BuildContext context) {
-    final color = switch (status) {
-      'RAW' => AppColors.textDisabled,
-      'SCORED' => AppColors.info,
-      'ASSIGNED' => AppColors.urgencyUrgent,
-      'IN_PROGRESS' => AppColors.primary,
-      'COMPLETED' => AppColors.urgencyModerate,
-      _ => AppColors.textDisabled,
-    };
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-      decoration: BoxDecoration(
-        color: color.withAlpha(25),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withAlpha(76)),
-      ),
-      child: Text(
-        status,
-        style: TextStyle(
-          color: color,
-          fontSize: 12,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
-    );
-  }
-}
