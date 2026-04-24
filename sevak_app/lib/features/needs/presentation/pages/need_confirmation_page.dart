@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sevak_app/providers/need_providers.dart';
 
+import '../../../../core/utils/snackbar_utils.dart';
+
 class NeedConfirmationPage extends ConsumerWidget {
   const NeedConfirmationPage({super.key});
 
@@ -63,11 +65,7 @@ class NeedConfirmationPage extends ConsumerWidget {
                   child: ElevatedButton(
                     onPressed: () {
                       ref.read(needControllerProvider.notifier).reset();
-                      // Because it's already saved to Firestore by the repository,
-                      // we just show success and go home.
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Need published successfully!')),
-                      );
+                      SnackbarUtils.showSuccess(context, 'Need published successfully!');
                       context.go('/');
                     },
                     child: const Text('Publish Need'),

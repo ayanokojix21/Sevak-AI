@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/utils/snackbar_utils.dart';
 import '../../../../providers/need_providers.dart';
 
 class AiProcessingPage extends ConsumerStatefulWidget {
@@ -40,15 +41,9 @@ class _AiProcessingPageState extends ConsumerState<AiProcessingPage>
       if (next is AsyncData && next.value != null) {
         context.pushReplacement('/need-confirmation');
       } else if (next is AsyncError) {
-        final errorMsg = next.error?.toString() ?? 'Unknown error';
+        final errorMsg = SnackbarUtils.messageFrom(next.error);
         debugPrint('AI Processing error: $errorMsg');
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('AI Processing failed: $errorMsg'),
-            backgroundColor: AppColors.error,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+        SnackbarUtils.showError(context, 'AI Processing failed: $errorMsg');
         context.pop();
       }
     });

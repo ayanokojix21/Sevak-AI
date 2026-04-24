@@ -7,6 +7,8 @@ import 'package:geolocator/geolocator.dart';
 import 'package:sevak_app/providers/need_providers.dart';
 import 'package:sevak_app/features/auth/presentation/controllers/auth_controller.dart';
 
+import '../../../../core/utils/snackbar_utils.dart';
+
 class SubmitNeedPage extends ConsumerStatefulWidget {
   const SubmitNeedPage({super.key});
 
@@ -30,15 +32,11 @@ class _SubmitNeedPageState extends ConsumerState<SubmitNeedPage> {
 
   Future<void> _submit() async {
     if (_textController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter a description')),
-      );
+      SnackbarUtils.showError(context, 'Please enter a description');
       return;
     }
     if (_selectedImage == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please take a photo of the situation')),
-      );
+      SnackbarUtils.showError(context, 'Please take a photo of the situation');
       return;
     }
 
@@ -59,34 +57,17 @@ class _SubmitNeedPageState extends ConsumerState<SubmitNeedPage> {
       }
       
       if (permission == LocationPermission.denied) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Location permission is required for accurate matching.')),
-          );
-        }
+        if (mounted) SnackbarUtils.showError(context, 'Location permission is required for accurate matching.');
       } else if (permission == LocationPermission.deniedForever) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Location permissions are permanently denied. Please enable in settings.')),
-          );
-        }
+        if (mounted) SnackbarUtils.showError(context, 'Location permissions are permanently denied. Please enable in Settings.');
       } else {
         bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
         if (!serviceEnabled) {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Please enable GPS/Location services on your device.')),
-            );
-          }
+          if (mounted) SnackbarUtils.showError(context, 'Please enable GPS/Location services on your device.');
         } else {
-          // Verify they gave precise location, not approximate
           LocationAccuracyStatus accuracy = await Geolocator.getLocationAccuracy();
           if (accuracy == LocationAccuracyStatus.reduced) {
-             if (mounted) {
-               ScaffoldMessenger.of(context).showSnackBar(
-                 const SnackBar(content: Text('Please grant "Precise" location access for accurate matching.')),
-               );
-             }
+            if (mounted) SnackbarUtils.showError(context, 'Please grant "Precise" location access for accurate matching.');
           }
 
           Position position = await Geolocator.getCurrentPosition(
