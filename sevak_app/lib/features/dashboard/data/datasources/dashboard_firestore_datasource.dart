@@ -2,7 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../../../../core/constants/app_constants.dart';
 import '../../../needs/data/models/need_model.dart';
-import '../models/ngo_model.dart';
+import '../../../ngos/data/models/ngo_model.dart';
 
 /// Firestore datasource for all Coordinator Dashboard operations.
 /// Handles streaming needs, claiming needs, and fetching NGO data.
