@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 
+import '../errors/failures.dart';
 import '../theme/app_theme.dart';
 
 class SnackbarUtils {
   SnackbarUtils._();
 
+  /// Shows an error snackbar. If [error] is a [Failure], uses its typed message.
   static void showError(BuildContext context, String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -29,6 +31,7 @@ class SnackbarUtils {
     );
   }
 
+  /// Shows a success snackbar.
   static void showSuccess(BuildContext context, String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -51,5 +54,12 @@ class SnackbarUtils {
         elevation: 6,
       ),
     );
+  }
+
+  /// Convenience: extracts a human-readable message from any thrown object.
+  /// If the error is a [Failure], returns its typed message; otherwise toString().
+  static String messageFrom(Object? error) {
+    if (error is Failure) return error.message;
+    return error?.toString() ?? 'An unexpected error occurred.';
   }
 }
