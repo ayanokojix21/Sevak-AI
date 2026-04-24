@@ -16,6 +16,8 @@ import 'features/needs/presentation/pages/need_confirmation_page.dart';
 import 'features/needs/presentation/pages/submit_need_page.dart';
 import 'features/ngos/presentation/pages/ngo_discovery_page.dart';
 import 'features/ngos/presentation/pages/register_ngo_page.dart';
+import 'features/tasks/presentation/pages/my_tasks_page.dart';
+import 'features/tasks/presentation/pages/task_detail_page.dart';
 
 class SevakApp extends ConsumerWidget {
   const SevakApp({super.key});
@@ -141,6 +143,18 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/register-ngo',
         builder: (context, state) => const RegisterNgoPage(),
+      ),
+      // Volunteer task flow
+      GoRoute(
+        path: '/my-tasks',
+        builder: (context, state) => const MyTasksPage(),
+      ),
+      GoRoute(
+        path: '/task/:id',
+        builder: (context, state) {
+          final taskId = state.pathParameters['id']!;
+          return TaskDetailPage(taskId: taskId);
+        },
       ),
     ],
   );
