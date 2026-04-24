@@ -44,7 +44,6 @@ final authControllerProvider =
     ref.watch(userRepositoryProvider),
     ref.watch(inviteCodeDatasourceProvider),
     ref.watch(superAdminConfigProvider),
-    ref,
   );
 });
 
@@ -55,14 +54,12 @@ class AuthController extends StateNotifier<AsyncValue<void>> {
   final UserRepository _userRepository;
   final InviteCodesDatasource _inviteCodesDatasource;
   final SuperAdminConfig _saConfig;
-  final Ref _ref;
 
   AuthController(
     this._authRepository,
     this._userRepository,
     this._inviteCodesDatasource,
     this._saConfig,
-    this._ref,
   ) : super(const AsyncValue.data(null));
 
   /// ── SIGN IN (Email) ─────────────────────────────────────────────────────
