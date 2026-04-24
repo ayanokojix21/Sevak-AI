@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/widgets/need_widgets.dart';
 import '../../../needs/domain/entities/need_entity.dart';
 
 /// Sortable table listing all needs with status badges.
@@ -221,9 +222,9 @@ class _NeedRow extends StatelessWidget {
                 child: Row(
                   children: [
                     Icon(
-                      _needTypeIcon(need.needType),
+                      NeedTypeChip.needTypeIcon(need.needType),
                       size: 16,
-                      color: _needTypeColor(need.needType),
+                      color: NeedTypeChip.needTypeColor(need.needType),
                     ),
                     const SizedBox(width: 6),
                     Flexible(
@@ -269,7 +270,10 @@ class _NeedRow extends StatelessWidget {
               // Status
               Expanded(
                 flex: 2,
-                child: _StatusBadge(status: need.status),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: StatusBadge(status: need.status, compact: true),
+                ),
               ),
 
               // Location
@@ -303,61 +307,5 @@ class _NeedRow extends StatelessWidget {
       ),
     );
   }
-
-  IconData _needTypeIcon(String type) {
-    return switch (type) {
-      'FOOD' => Icons.restaurant_rounded,
-      'MEDICAL' => Icons.local_hospital_rounded,
-      'SHELTER' => Icons.home_rounded,
-      'CLOTHING' => Icons.checkroom_rounded,
-      _ => Icons.help_outline_rounded,
-    };
-  }
-
-  Color _needTypeColor(String type) {
-    return switch (type) {
-      'FOOD' => const Color(0xFFFF7043),
-      'MEDICAL' => const Color(0xFFEF5350),
-      'SHELTER' => const Color(0xFF42A5F5),
-      'CLOTHING' => const Color(0xFFAB47BC),
-      _ => const Color(0xFF78909C),
-    };
-  }
 }
 
-class _StatusBadge extends StatelessWidget {
-  final String status;
-  const _StatusBadge({required this.status});
-
-  @override
-  Widget build(BuildContext context) {
-    final color = switch (status) {
-      'RAW' => AppColors.textDisabled,
-      'SCORED' => AppColors.info,
-      'ASSIGNED' => AppColors.urgencyUrgent,
-      'IN_PROGRESS' => AppColors.primary,
-      'COMPLETED' => AppColors.urgencyModerate,
-      _ => AppColors.textDisabled,
-    };
-
-    return Align(
-      alignment: Alignment.centerLeft,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-        decoration: BoxDecoration(
-          color: color.withAlpha(25),
-          borderRadius: BorderRadius.circular(6),
-          border: Border.all(color: color.withAlpha(76)),
-        ),
-        child: Text(
-          status,
-          style: TextStyle(
-            color: color,
-            fontSize: 11,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-      ),
-    );
-  }
-}
