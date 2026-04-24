@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/constants/app_constants.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/utils/snackbar_utils.dart';
 import '../../../../providers/ngo_providers.dart';
 import '../../../../providers/dashboard_providers.dart';
 
@@ -90,9 +92,7 @@ class _NgoManagementTab extends ConsumerWidget {
                             tooltip: 'Approve',
                             onPressed: () {
                               ref.read(ngosDatasourceProvider).approveNgo(ngo.id, ngo.adminUid);
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('NGO Approved & Admin role assigned')),
-                              );
+                              SnackbarUtils.showSuccess(context, 'NGO Approved & Admin role assigned');
                             },
                           ),
                           IconButton(
@@ -100,9 +100,7 @@ class _NgoManagementTab extends ConsumerWidget {
                             tooltip: 'Reject',
                             onPressed: () {
                               ref.read(ngosDatasourceProvider).updateNgoStatus(ngo.id, 'rejected');
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('NGO Rejected')),
-                              );
+                              SnackbarUtils.showError(context, 'NGO Rejected');
                             },
                           ),
                         ],
@@ -253,7 +251,7 @@ class _PlatformAnalyticsTab extends ConsumerWidget {
               child: _buildStatCard(
                 'Resolved',
                 allNeeds.when(
-                  data: (n) => '${n.where((need) => need.status == 'COMPLETED').length}',
+                  data: (n) => '${n.where((need) => need.status == AppConstants.statusCompleted).length}',
                   loading: () => '...',
                   error: (_, __) => '—',
                 ),
@@ -277,9 +275,7 @@ class _PlatformAnalyticsTab extends ConsumerWidget {
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
             onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Emergency broadcast sent!')),
-              );
+              SnackbarUtils.showSuccess(context, 'Emergency broadcast sent!');
             },
           ),
         ),
