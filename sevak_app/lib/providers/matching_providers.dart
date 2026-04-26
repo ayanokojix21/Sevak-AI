@@ -1,18 +1,16 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../features/matching/data/datasources/matching_gemini_datasource.dart';
+import '../features/matching/data/datasources/matching_ai_datasource.dart';
 import '../features/matching/domain/usecases/match_volunteer_usecase.dart';
 import '../features/needs/domain/entities/need_entity.dart';
 
-// ── Datasource & UseCase ──────────────────────────────────────────────────────
-final matchingGeminiDatasourceProvider = Provider<MatchingGeminiDatasource>((ref) {
-  return MatchingGeminiDatasource();
+final matchingAiDatasourceProvider = Provider<MatchingAiDatasource>((ref) {
+  return MatchingAiDatasource();
 });
 
 final matchVolunteerUseCaseProvider = Provider<MatchVolunteerUseCase>((ref) {
-  return MatchVolunteerUseCase(ref.watch(matchingGeminiDatasourceProvider));
+  return MatchVolunteerUseCase(ref.watch(matchingAiDatasourceProvider));
 });
 
-// ── Controller ────────────────────────────────────────────────────────────────
 final matchingControllerProvider =
     StateNotifierProvider<MatchingController, AsyncValue<String?>>((ref) {
   return MatchingController(ref.watch(matchVolunteerUseCaseProvider));
