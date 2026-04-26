@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/snackbar_utils.dart';
-import '../../../auth/presentation/controllers/auth_controller.dart';
+import '../../../../providers/auth_providers.dart';
 import '../../../dashboard/domain/entities/ngo_entity.dart';
 import '../../domain/entities/join_request_entity.dart';
 import '../../data/datasources/join_request_datasource.dart';
@@ -185,9 +185,9 @@ class _NgoCardState extends ConsumerState<_NgoCard> {
   bool _expanded = false;
 
   void _showJoinDialog() {
-    // Check if profile is complete — CU users need to fill details before joining
+    // Check if profile has skills — CU users need to fill details before joining
     final profile = ref.read(volunteerProfileProvider).value;
-    if (profile != null && !profile.isProfileComplete) {
+    if (profile != null && profile.skills.isEmpty) {
       SnackbarUtils.showError(
         context,
         'Please complete your profile first to join an NGO',

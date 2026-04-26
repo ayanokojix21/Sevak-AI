@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../domain/entities/ngo_entity.dart';
 
 /// Firestore-serializable model for the canonical NgoEntity.
@@ -33,7 +34,9 @@ class NgoModel extends NgoEntity {
       operatingAreas: (json['operatingAreas'] as List<dynamic>?)?.cast<String>() ?? [],
       sharedSkillCategories: (json['sharedSkillCategories'] as List<dynamic>?)?.cast<String>() ?? [],
       createdAt: json['createdAt'] != null
-          ? DateTime.tryParse(json['createdAt'].toString()) ?? DateTime.now()
+          ? (json['createdAt'] is Timestamp 
+              ? (json['createdAt'] as Timestamp).toDate() 
+              : DateTime.tryParse(json['createdAt'].toString()) ?? DateTime.now())
           : DateTime.now(),
     );
   }
@@ -51,7 +54,7 @@ class NgoModel extends NgoEntity {
       'volunteerCount': volunteerCount,
       'operatingAreas': operatingAreas,
       'sharedSkillCategories': sharedSkillCategories,
-      'createdAt': createdAt.toIso8601String(),
+      'createdAt': Timestamp.fromDate(createdAt),
     };
   }
 }

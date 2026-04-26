@@ -1,13 +1,15 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/snackbar_utils.dart';
 import '../../../../providers/dashboard_providers.dart';
 import '../../../../providers/matching_providers.dart';
 import '../../../needs/domain/entities/need_entity.dart';
-import '../controllers/dashboard_controller.dart';
+
 import '../widgets/need_detail_panel.dart';
 import '../widgets/needs_map.dart';
 import '../widgets/stat_cards.dart';
@@ -56,7 +58,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
     final needsStream = showGlobal
         ? ref.watch(allNeedsStreamProvider)
         : coordinatorNgo != null
-            ? ref.watch(ngoNeedsStreamProvider(coordinatorNgo.id))
+            ? ref.watch(mergedNgoNeedsProvider(coordinatorNgo.id))
             : const AsyncValue<List<NeedEntity>>.data([]);
 
     // Listen for controller errors
@@ -79,6 +81,12 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
     return Scaffold(
       backgroundColor: AppColors.bgBase,
       appBar: _buildAppBar(showGlobal, coordinatorNgo?.name),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => context.push('/submit-community-report'),
+        backgroundColor: AppColors.error,
+        icon: const Icon(Icons.campaign, color: Colors.white),
+        label: const Text('Report Emergency', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+      ).animate(onPlay: (c) => c.repeat(reverse: true)).scale(begin: const Offset(1, 1), end: const Offset(1.05, 1.05), duration: 1.seconds),
       body: needsStream.when(
         data: (needs) => _buildBody(context, needs, selectedNeed, coordinatorNgo?.id),
         loading: () => const Center(
@@ -365,6 +373,28 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
           claimedByNgoName: ngoName,
           coordinatorNgoId: coordinatorNgoId,
           isMatching: isMatching,
+          // Retry AI Match — only shown on stuck SCORED/RAW needs owned by this coordinator
+          onApprove: (need.status == 'SCORED' || need.status == 'RAW') &&
+                  coordinatorNgoId != null &&
+                  need.ngoId == coordinatorNgoId
+              ? () => ref.read(matchingControllerProvider.notifier).matchForNeed(need)
+              : null,
+          // Cancel Task — coordinator can cancel any assigned task in their NGO
+          onCancel: coordinatorNgoId != null && need.ngoId == coordinatorNgoId
+              ? () async {
+                  await ref.read(dashboardControllerProvider.notifier).updateStatus(
+                        needId: need.id,
+                        newStatus: 'CANCELLED',
+                      );
+                  if (!context.mounted) return;
+                  SnackbarUtils.showSuccess(context, 'Task cancelled.');
+                  if (onClose != null) {
+                    onClose();
+                  } else {
+                    ref.read(selectedNeedProvider.notifier).state = null;
+                  }
+                }
+              : null,
           onMatch: coordinatorNgoId != null && need.ngoId == coordinatorNgoId
               ? () => ref.read(matchingControllerProvider.notifier).matchForNeed(need)
               : null,
@@ -374,7 +404,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                         needId: need.id,
                         ngoId: coordinatorNgoId,
                       );
-                  if (!mounted) return;
+                  if (!context.mounted) return;
                   SnackbarUtils.showSuccess(context, 'Need claimed for your NGO!');
                 }
               : null,
@@ -386,7 +416,6 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
   }
 }
 
-// ── Toggle Button ─────────────────────────────────────────────────────────────
 
 class _ToggleButton extends StatelessWidget {
   final String label;

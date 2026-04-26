@@ -7,7 +7,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/snackbar_utils.dart';
-import '../../../auth/presentation/controllers/auth_controller.dart';
+import '../../../../providers/auth_providers.dart';
 
 /// Page for registering a new NGO. Creates with status: 'pending'.
 /// Super Admin must approve before it appears in discovery.

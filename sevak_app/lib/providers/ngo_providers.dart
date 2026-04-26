@@ -5,12 +5,10 @@ import '../features/ngos/data/datasources/ngos_firestore_datasource.dart';
 import '../features/ngos/data/datasources/join_request_datasource.dart';
 import '../features/ngos/domain/entities/join_request_entity.dart';
 
-// ── NGO Datasource ───────────────────────────────────────────────────────────
 final ngosDatasourceProvider = Provider<NgosFirestoreDatasource>((ref) {
   return NgosFirestoreDatasource();
 });
 
-// ── NGO Streams ──────────────────────────────────────────────────────────────
 final pendingNgosProvider = StreamProvider<List<NgoEntity>>((ref) {
   return ref.watch(ngosDatasourceProvider).streamPendingNgos();
 });
@@ -23,7 +21,6 @@ final allNgosProvider = StreamProvider<List<NgoEntity>>((ref) {
   return ref.watch(ngosDatasourceProvider).streamAllNgos();
 });
 
-// ── Join Request Streams ─────────────────────────────────────────────────────
 
 /// Pending join requests for a specific NGO (used by NGO Admin).
 final pendingJoinRequestsProvider =

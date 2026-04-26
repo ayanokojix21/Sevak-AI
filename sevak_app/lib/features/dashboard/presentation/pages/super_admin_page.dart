@@ -45,7 +45,6 @@ class _SuperAdminPageState extends ConsumerState<SuperAdminPage> {
   }
 }
 
-// ── NGO Management Tab ───────────────────────────────────────────────────────
 
 class _NgoManagementTab extends ConsumerWidget {
   const _NgoManagementTab();
@@ -149,10 +148,30 @@ class _NgoManagementTab extends ConsumerWidget {
                             onPressed: () => context.push('/ngo-admin/${ngo.id}'),
                           ),
                           IconButton(
-                            icon: Icon(Icons.block, size: 18, color: Colors.red.shade300),
-                            tooltip: 'Suspend',
-                            onPressed: () {
-                              ref.read(ngosDatasourceProvider).updateNgoStatus(ngo.id, 'suspended');
+                            icon: Icon(Icons.delete_forever, size: 20, color: AppColors.error),
+                            tooltip: 'Suspend NGO',
+                            onPressed: () async {
+                              final confirm = await showDialog<bool>(
+                                context: context,
+                                builder: (ctx) => AlertDialog(
+                                  title: const Text('Suspend NGO?'),
+                                  content: Text('Are you sure you want to suspend ${ngo.name}? This will remove it from the active list.'),
+                                  actions: [
+                                    TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+                                    FilledButton(
+                                      onPressed: () => Navigator.pop(ctx, true),
+                                      style: FilledButton.styleFrom(backgroundColor: AppColors.error),
+                                      child: const Text('Suspend'),
+                                    ),
+                                  ],
+                                ),
+                              );
+                              if (confirm == true) {
+                                await ref.read(ngosDatasourceProvider).updateNgoStatus(ngo.id, 'suspended');
+                                if (context.mounted) {
+                                  SnackbarUtils.showError(context, 'NGO Suspended');
+                                }
+                              }
                             },
                           ),
                         ],
@@ -191,7 +210,6 @@ class _NgoManagementTab extends ConsumerWidget {
   }
 }
 
-// ── Analytics Tab ────────────────────────────────────────────────────────────
 
 class _PlatformAnalyticsTab extends ConsumerWidget {
   const _PlatformAnalyticsTab();

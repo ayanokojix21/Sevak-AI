@@ -5,7 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/constants/role_definitions.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/snackbar_utils.dart';
-import '../../../auth/presentation/controllers/auth_controller.dart';
+import '../../../../providers/auth_providers.dart';
 import '../../../auth/data/datasources/invite_codes_datasource.dart';
 import '../../../ngos/data/datasources/join_request_datasource.dart';
 import '../../../partnerships/domain/entities/partnership_entity.dart';
@@ -56,7 +56,6 @@ class _NgoAdminPageState extends ConsumerState<NgoAdminPage> {
   }
 }
 
-// ── Join Requests Tab ────────────────────────────────────────────────────────
 
 class _JoinRequestsTab extends ConsumerWidget {
   final String ngoId;
@@ -171,7 +170,6 @@ class _JoinRequestsTab extends ConsumerWidget {
   }
 }
 
-// ── Members Tab ──────────────────────────────────────────────────────────────
 
 class _MembersTab extends ConsumerWidget {
   final String ngoId;
@@ -211,14 +209,46 @@ class _MembersTab extends ConsumerWidget {
                 title: Text(member.name, style: const TextStyle(fontWeight: FontWeight.w500)),
                 subtitle: Text(member.email,
                     style: const TextStyle(color: AppColors.textSecondary, fontSize: 12)),
-                trailing: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: role.color.withAlpha(20),
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: Text(role.label,
-                      style: TextStyle(color: role.color, fontSize: 10, fontWeight: FontWeight.w600)),
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: role.color.withAlpha(20),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(role.label,
+                          style: TextStyle(color: role.color, fontSize: 10, fontWeight: FontWeight.w600)),
+                    ),
+                    const SizedBox(width: 8),
+                    IconButton(
+                      icon: const Icon(Icons.remove_circle_outline, color: AppColors.error, size: 20),
+                      onPressed: () async {
+                        final confirm = await showDialog<bool>(
+                          context: context,
+                          builder: (ctx) => AlertDialog(
+                            title: const Text('Remove Member?'),
+                            content: Text('Are you sure you want to remove ${member.name} from this NGO?'),
+                            actions: [
+                              TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+                              FilledButton(
+                                onPressed: () => Navigator.pop(ctx, true),
+                                style: FilledButton.styleFrom(backgroundColor: AppColors.error),
+                                child: const Text('Remove'),
+                              ),
+                            ],
+                          ),
+                        );
+                        if (confirm == true) {
+                          await ref.read(userRepositoryProvider).removeNgoMembership(member.uid, ngoId);
+                          if (context.mounted) {
+                            SnackbarUtils.showSuccess(context, 'Member removed');
+                          }
+                        }
+                      },
+                    ),
+                  ],
                 ),
               ),
             );
@@ -231,7 +261,6 @@ class _MembersTab extends ConsumerWidget {
   }
 }
 
-// ── Invite Codes Tab ─────────────────────────────────────────────────────────
 
 class _InviteCodesTab extends ConsumerWidget {
   final String ngoId;
@@ -375,7 +404,6 @@ class _InviteButton extends StatelessWidget {
   }
 }
 
-// ── Partnerships Tab ──────────────────────────────────────────────────────────
 
 class _PartnershipsTab extends ConsumerStatefulWidget {
   final String ngoId;
@@ -403,7 +431,6 @@ class _PartnershipsTabState extends ConsumerState<_PartnershipsTab> {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        // ── Send Invite Section ──────────────────────────────────────────────
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
@@ -486,7 +513,6 @@ class _PartnershipsTabState extends ConsumerState<_PartnershipsTab> {
         ),
         const SizedBox(height: 20),
 
-        // ── Active & Pending Partnerships ────────────────────────────────────
         const Text('PARTNERSHIPS', style: TextStyle(
           fontSize: 11, fontWeight: FontWeight.w700,
           color: AppColors.textSecondary, letterSpacing: 1.2,
