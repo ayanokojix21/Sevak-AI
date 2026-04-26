@@ -1,8 +1,11 @@
 import 'dart:convert';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
+import '../../../../core/constants/app_constants.dart';
+import '../../../../core/config/env_config.dart';
 
 class NominatimDatasource {
-  static const String _baseUrl = 'https://nominatim.openstreetmap.org/search';
+  static const String _baseUrl = '${AppConstants.nominatimBaseUrl}/search';
   
   /// Respect Nominatim's 1-req/sec policy
   DateTime? _lastRequestTime;
@@ -22,13 +25,13 @@ class NominatimDatasource {
     
     // Custom User-Agent is REQUIRED by Nominatim Terms of Service
     final response = await http.get(uri, headers: {
-      'User-Agent': 'SevakAI/1.0 (Contact: volunteer@sevakai.org)',
+      'User-Agent': EnvConfig.nominatimUserAgent,
     });
 
     if (response.statusCode == 200) {
       final List<dynamic> results = jsonDecode(response.body) as List<dynamic>;
       if (results.isNotEmpty) {
-        final firstResult = results.first;
+        final firstResult = results.first as Map<String, dynamic>;
         return {
           'lat': double.parse(firstResult['lat'].toString()),
           'lng': double.parse(firstResult['lon'].toString()), // Nominatim uses 'lon'
@@ -50,10 +53,10 @@ class NominatimDatasource {
     }
     _lastRequestTime = DateTime.now();
 
-    final uri = Uri.parse('https://nominatim.openstreetmap.org/reverse?lat=$lat&lon=$lng&format=json');
+    final uri = Uri.parse('${AppConstants.nominatimBaseUrl}/reverse?lat=$lat&lon=$lng&format=json');
     
     final response = await http.get(uri, headers: {
-      'User-Agent': 'SevakAI/1.0 (Contact: volunteer@sevakai.org)',
+      'User-Agent': EnvConfig.nominatimUserAgent,
     });
 
     if (response.statusCode == 200) {

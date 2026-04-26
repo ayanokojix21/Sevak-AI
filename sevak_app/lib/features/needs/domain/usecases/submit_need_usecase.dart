@@ -15,8 +15,9 @@ class SubmitNeedUseCase {
 
   Future<NeedEntity> call({
     required String rawText,
-    required File imageFile,
+    File? imageFile,
     required String ngoId,
+    List<int>? audioBytes,
     double? lat,
     double? lng,
   }) async {
@@ -24,6 +25,7 @@ class SubmitNeedUseCase {
       rawText: rawText,
       imageFile: imageFile,
       ngoId: ngoId,
+      audioBytes: audioBytes,
       lat: lat,
       lng: lng,
     );

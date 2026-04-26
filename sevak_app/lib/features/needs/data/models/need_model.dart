@@ -15,10 +15,15 @@ class NeedModel extends NeedEntity {
     required super.peopleAffected,
     required super.status,
     required super.submittedBy,
+    super.submittedByName = 'Unknown',
     super.assignedTo,
+    super.assignedVolunteerIds = const [],
+    super.rejectedBy = const [],
     super.matchReason,
     required super.ngoId,
     required super.createdAt,
+    super.updatedAt,
+    super.scaleAssessment,
   });
 
   factory NeedModel.fromEntity(NeedEntity entity) {
@@ -35,10 +40,15 @@ class NeedModel extends NeedEntity {
       peopleAffected: entity.peopleAffected,
       status: entity.status,
       submittedBy: entity.submittedBy,
+      submittedByName: entity.submittedByName,
       assignedTo: entity.assignedTo,
+      assignedVolunteerIds: entity.assignedVolunteerIds,
+      rejectedBy: entity.rejectedBy,
       matchReason: entity.matchReason,
       ngoId: entity.ngoId,
       createdAt: entity.createdAt,
+      updatedAt: entity.updatedAt,
+      scaleAssessment: entity.scaleAssessment,
     );
   }
 
@@ -56,10 +66,17 @@ class NeedModel extends NeedEntity {
       peopleAffected: (json['peopleAffected'] as num?)?.toInt() ?? 0,
       status: json['status'] as String? ?? 'RAW',
       submittedBy: json['submittedBy'] as String? ?? '',
+      submittedByName: json['submittedByName'] as String? ?? 'Unknown',
       assignedTo: json['assignedTo'] as String?,
+      assignedVolunteerIds: List<String>.from(json['assignedVolunteerIds'] as Iterable? ?? []),
+      rejectedBy: List<String>.from(json['rejectedBy'] as Iterable? ?? []),
       matchReason: json['matchReason'] as String?,
       ngoId: json['ngoId'] as String? ?? '',
       createdAt: (json['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      updatedAt: (json['updatedAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      scaleAssessment: json['scaleAssessment'] != null 
+          ? ScaleAssessment.fromJson(json['scaleAssessment'] as Map<String, dynamic>) 
+          : ScaleAssessment.empty,
     );
   }
 
@@ -76,10 +93,15 @@ class NeedModel extends NeedEntity {
       'peopleAffected': peopleAffected,
       'status': status,
       'submittedBy': submittedBy,
+      'submittedByName': submittedByName,
       'assignedTo': assignedTo,
+      'assignedVolunteerIds': assignedVolunteerIds,
+      'rejectedBy': rejectedBy,
       'matchReason': matchReason,
       'ngoId': ngoId,
       'createdAt': FieldValue.serverTimestamp(),
+      'updatedAt': FieldValue.serverTimestamp(),
+      'scaleAssessment': scaleAssessment.toJson(),
     };
   }
 }

@@ -5,8 +5,9 @@ abstract class NeedRepository {
   /// Processes a raw submission through the AI pipeline (Cloudinary -> Gemini -> Nominatim -> Firestore)
   Future<NeedEntity> submitNeed({
     required String rawText,
-    required File imageFile,
+    File? imageFile,
     required String ngoId,
+    List<int>? audioBytes,
     double? lat,
     double? lng,
   });

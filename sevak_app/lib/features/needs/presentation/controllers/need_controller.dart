@@ -8,13 +8,14 @@ class NeedController extends StateNotifier<AsyncValue<NeedEntity?>> {
 
   NeedController(this._submitNeedUseCase) : super(const AsyncData(null));
 
-  Future<void> submitNeed(String text, File imageFile, String ngoId, {double? lat, double? lng}) async {
+  Future<void> submitNeed(String text, File? imageFile, String ngoId, {List<int>? audioBytes, double? lat, double? lng}) async {
     state = const AsyncLoading();
     try {
       final result = await _submitNeedUseCase(
         rawText: text,
         imageFile: imageFile,
         ngoId: ngoId,
+        audioBytes: audioBytes,
         lat: lat,
         lng: lng,
       );

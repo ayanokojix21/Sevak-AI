@@ -1,7 +1,8 @@
 import 'dart:convert';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:crypto/crypto.dart';
 import 'package:http/http.dart' as http;
-import 'package:sevak_app/core/config/env_config.dart';
+import '../../../../core/config/env_config.dart';
 
 class CloudinaryDatasource {
   Future<String> uploadImage(List<int> imageBytes, String filename) async {
@@ -16,7 +17,7 @@ class CloudinaryDatasource {
     final signature = sha1.convert(utf8.encode(signaturePayload)).toString();
 
     final uri = Uri.parse('https://api.cloudinary.com/v1_1/$cloudName/image/upload');
-    var request = http.MultipartRequest('POST', uri);
+    final request = http.MultipartRequest('POST', uri);
 
     request.fields['api_key'] = apiKey;
     request.fields['timestamp'] = timestamp;
@@ -35,7 +36,7 @@ class CloudinaryDatasource {
     final responseBody = await response.stream.bytesToString();
 
     if (response.statusCode == 200) {
-      final jsonResponse = jsonDecode(responseBody);
+      final jsonResponse = jsonDecode(responseBody) as Map<String, dynamic>;
       return jsonResponse['secure_url'] as String;
     } else {
       throw Exception('Failed to upload image to Cloudinary: ${response.statusCode} - $responseBody');
