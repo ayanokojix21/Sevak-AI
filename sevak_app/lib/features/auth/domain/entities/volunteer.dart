@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import '../../../../core/constants/app_constants.dart';
 
 /// Represents a volunteer's membership in a single NGO.
 class NgoMembership extends Equatable {
@@ -59,9 +60,13 @@ class Volunteer extends Equatable {
   final List<NgoMembership> ngoMemberships;
   final String platformRole; // 'SA', 'NA', 'CO', 'VL', 'CU'
   final List<String> skills;
+  final List<String> languages;
   final int activeTasks;
+  final int maxConcurrentTasks;
   final bool isProfileComplete;
   final bool isAvailable;
+  final double currentLat;
+  final double currentLng;
   final DateTime createdAt;
 
   const Volunteer({
@@ -74,9 +79,13 @@ class Volunteer extends Equatable {
     required this.ngoMemberships,
     required this.platformRole,
     this.skills = const [],
+    this.languages = const ['English', 'Hindi'],
     this.activeTasks = 0,
+    this.maxConcurrentTasks = AppConstants.defaultMaxConcurrentTasks,
     this.isProfileComplete = false,
     this.isAvailable = true,
+    this.currentLat = 0.0,
+    this.currentLng = 0.0,
     required this.createdAt,
   });
 
@@ -97,9 +106,13 @@ class Volunteer extends Equatable {
       ngoMemberships: memberships,
       platformRole: json['platformRole'] as String? ?? 'CU',
       skills: (json['skills'] as List<dynamic>?)?.cast<String>() ?? [],
+      languages: (json['languages'] as List<dynamic>?)?.cast<String>() ?? const ['English', 'Hindi'],
       activeTasks: (json['activeTasks'] as num?)?.toInt() ?? 0,
+      maxConcurrentTasks: (json['maxConcurrentTasks'] as num?)?.toInt() ?? AppConstants.defaultMaxConcurrentTasks,
       isProfileComplete: json['isProfileComplete'] as bool? ?? false,
       isAvailable: json['isAvailable'] as bool? ?? true,
+      currentLat: (json['currentLat'] as num?)?.toDouble() ?? 0.0,
+      currentLng: (json['currentLng'] as num?)?.toDouble() ?? 0.0,
       createdAt: json['createdAt'] != null
           ? DateTime.tryParse(json['createdAt'].toString()) ?? DateTime.now()
           : DateTime.now(),
@@ -115,9 +128,13 @@ class Volunteer extends Equatable {
         'ngoMemberships': ngoMemberships.map((m) => m.toJson()).toList(),
         'platformRole': platformRole,
         'skills': skills,
+        'languages': languages,
         'activeTasks': activeTasks,
+        'maxConcurrentTasks': maxConcurrentTasks,
         'isProfileComplete': isProfileComplete,
         'isAvailable': isAvailable,
+        'currentLat': currentLat,
+        'currentLng': currentLng,
         'createdAt': createdAt.toIso8601String(),
       };
 
@@ -131,9 +148,13 @@ class Volunteer extends Equatable {
     List<NgoMembership>? ngoMemberships,
     String? platformRole,
     List<String>? skills,
+    List<String>? languages,
     int? activeTasks,
+    int? maxConcurrentTasks,
     bool? isProfileComplete,
     bool? isAvailable,
+    double? currentLat,
+    double? currentLng,
     DateTime? createdAt,
   }) {
     return Volunteer(
@@ -146,9 +167,13 @@ class Volunteer extends Equatable {
       ngoMemberships: ngoMemberships ?? this.ngoMemberships,
       platformRole: platformRole ?? this.platformRole,
       skills: skills ?? this.skills,
+      languages: languages ?? this.languages,
       activeTasks: activeTasks ?? this.activeTasks,
+      maxConcurrentTasks: maxConcurrentTasks ?? this.maxConcurrentTasks,
       isProfileComplete: isProfileComplete ?? this.isProfileComplete,
       isAvailable: isAvailable ?? this.isAvailable,
+      currentLat: currentLat ?? this.currentLat,
+      currentLng: currentLng ?? this.currentLng,
       createdAt: createdAt ?? this.createdAt,
     );
   }
@@ -161,7 +186,7 @@ class Volunteer extends Equatable {
   @override
   List<Object?> get props => [
         uid, name, email, phone, city, primaryNgoId,
-        ngoMemberships, platformRole, skills, activeTasks,
-        isProfileComplete, isAvailable, createdAt,
+        ngoMemberships, platformRole, skills, languages, activeTasks,
+        maxConcurrentTasks, isProfileComplete, isAvailable, currentLat, currentLng, createdAt,
       ];
 }

@@ -9,45 +9,8 @@ import '../../data/repositories/firebase_auth_repository.dart';
 import '../../data/repositories/user_repository.dart';
 import '../../data/datasources/invite_codes_datasource.dart';
 
-// ── Providers ────────────────────────────────────────────────────────────────
+// Providers moved to lib/providers/auth_providers.dart
 
-/// Stream of Firebase Auth state (User? — logged in or not).
-final authStateProvider = StreamProvider<User?>((ref) {
-  return ref.watch(authRepositoryProvider).authStateChanges;
-});
-
-/// Real-time stream of the complete Volunteer profile.
-/// StreamProvider ensures UI updates instantly when Firestore data changes.
-final volunteerProfileProvider = StreamProvider<Volunteer?>((ref) {
-  final user = ref.watch(authStateProvider).value;
-  if (user == null) return Stream.value(null);
-  return ref.watch(userRepositoryProvider).streamVolunteerProfile(user.uid);
-});
-
-/// Streams staff (CO + NA) for a specific NGO.
-final ngoStaffProvider =
-    StreamProvider.family<List<Volunteer>, String>((ref, ngoId) {
-  return ref.watch(userRepositoryProvider).streamNgoStaff(ngoId);
-});
-
-/// Streams ALL members for a specific NGO.
-final ngoMembersProvider =
-    StreamProvider.family<List<Volunteer>, String>((ref, ngoId) {
-  return ref.watch(userRepositoryProvider).streamNgoMembers(ngoId);
-});
-
-/// Auth controller for actions (sign in, sign up, invite code, etc.).
-final authControllerProvider =
-    StateNotifierProvider<AuthController, AsyncValue<void>>((ref) {
-  return AuthController(
-    ref.watch(authRepositoryProvider),
-    ref.watch(userRepositoryProvider),
-    ref.watch(inviteCodeDatasourceProvider),
-    ref.watch(superAdminConfigProvider),
-  );
-});
-
-// ── Controller ───────────────────────────────────────────────────────────────
 
 class AuthController extends StateNotifier<AsyncValue<void>> {
   final AuthRepository _authRepository;
@@ -62,7 +25,6 @@ class AuthController extends StateNotifier<AsyncValue<void>> {
     this._saConfig,
   ) : super(const AsyncValue.data(null));
 
-  /// ── SIGN IN (Email) ─────────────────────────────────────────────────────
   /// After authentication, checks if the user's role needs upgrading to SA.
   Future<void> signInWithEmail(String email, String password) async {
     state = const AsyncValue.loading();
@@ -80,7 +42,6 @@ class AuthController extends StateNotifier<AsyncValue<void>> {
     }
   }
 
-  /// ── SIGN UP (Email) ─────────────────────────────────────────────────────
   Future<void> signUpWithEmail({
     required String email,
     required String password,
@@ -102,7 +63,7 @@ class AuthController extends StateNotifier<AsyncValue<void>> {
           ngoMemberships: const [],
           platformRole: isSA ? 'SA' : 'CU',
           skills: [],
-          isProfileComplete: false,
+          isProfileComplete: true, // Community users do not need to complete volunteer profile initially
           createdAt: DateTime.now(),
         );
         await _userRepository.saveVolunteerProfile(volunteer);
@@ -114,7 +75,6 @@ class AuthController extends StateNotifier<AsyncValue<void>> {
     }
   }
 
-  /// ── GOOGLE SIGN IN ──────────────────────────────────────────────────────
   Future<void> signInWithGoogle() async {
     state = const AsyncValue.loading();
     try {
@@ -137,7 +97,7 @@ class AuthController extends StateNotifier<AsyncValue<void>> {
             ngoMemberships: const [],
             platformRole: isSA ? 'SA' : 'CU',
             skills: [],
-            isProfileComplete: false,
+            isProfileComplete: true, // Community users do not need to complete volunteer profile initially
             createdAt: DateTime.now(),
           );
           await _userRepository.saveVolunteerProfile(volunteer);
@@ -153,7 +113,38 @@ class AuthController extends StateNotifier<AsyncValue<void>> {
     }
   }
 
-  /// ── SIGN OUT ────────────────────────────────────────────────────────────
+  Future<void> signInAnonymously() async {
+    state = const AsyncValue.loading();
+    try {
+      final cred = await _authRepository.signInAnonymously();
+
+      if (cred.user != null) {
+        final existingProfile =
+            await _userRepository.getVolunteerProfile(cred.user!.uid);
+
+        if (existingProfile == null) {
+          final volunteer = Volunteer(
+            uid: cred.user!.uid,
+            name: 'Anonymous User',
+            email: 'anonymous_${cred.user!.uid.substring(0, 5)}@sevakai.local',
+            phone: '',
+            primaryNgoId: '',
+            ngoMemberships: const [],
+            platformRole: 'CU',
+            skills: [],
+            isProfileComplete: true, // Bypass profile setup for anonymous
+            createdAt: DateTime.now(),
+          );
+          await _userRepository.saveVolunteerProfile(volunteer);
+        }
+      }
+
+      state = const AsyncValue.data(null);
+    } catch (e, st) {
+      state = AsyncValue.error(e, st);
+    }
+  }
+
   Future<void> signOut() async {
     state = const AsyncValue.loading();
     try {
@@ -164,7 +155,6 @@ class AuthController extends StateNotifier<AsyncValue<void>> {
     }
   }
 
-  /// ── PROFILE SETUP ───────────────────────────────────────────────────────
   /// Saves updated profile data from the profile setup form.
   Future<void> completeProfileSetup({
     required String name,
@@ -195,71 +185,62 @@ class AuthController extends StateNotifier<AsyncValue<void>> {
     }
   }
 
-  /// ── INVITE CODE ─────────────────────────────────────────────────────────
   /// Redeems an invite code to join an NGO with a specific role.
   Future<void> consumeInviteCode(String code) async {
-    state = const AsyncValue.loading();
-    try {
-      final user = _authRepository.currentUser;
-      if (user == null) throw Exception('Not logged in');
+    final user = _authRepository.currentUser;
+    if (user == null) throw Exception('Not logged in');
 
-      final inviteCode = await _inviteCodesDatasource.getInviteCode(code);
-      if (inviteCode == null) throw Exception('Invalid Invite Code');
+    final inviteCode = await _inviteCodesDatasource.getInviteCode(code);
+    if (inviteCode == null) throw Exception('Invalid Invite Code');
 
-      // Block SA/NA assignment via invite codes
-      if (inviteCode.targetRole == 'SA' || inviteCode.targetRole == 'NA') {
-        throw Exception('${inviteCode.targetRole} role cannot be assigned via invite code');
-      }
+    // Block SA/NA assignment via invite codes
+    if (inviteCode.targetRole == 'SA' || inviteCode.targetRole == 'NA') {
+      throw Exception('${inviteCode.targetRole} role cannot be assigned via invite code');
+    }
 
-      final existingProfile =
-          await _userRepository.getVolunteerProfile(user.uid);
-      if (existingProfile == null) throw Exception('Profile not found');
+    final existingProfile =
+        await _userRepository.getVolunteerProfile(user.uid);
+    if (existingProfile == null) throw Exception('Profile not found');
 
-      // Prevent duplicate membership
-      if (existingProfile.isMemberOf(inviteCode.ngoId)) {
-        throw Exception('You are already a member of this NGO');
-      }
+    // Prevent duplicate membership
+    if (existingProfile.isMemberOf(inviteCode.ngoId)) {
+      throw Exception('You are already a member of this NGO');
+    }
 
-      // Build updated ngoMemberships array
-      final newMembership = NgoMembership(
-        ngoId: inviteCode.ngoId,
-        role: inviteCode.targetRole,
-        crossNgoConsent: false,
-        status: 'active',
-      );
-      final updatedMemberships = [
-        ...existingProfile.ngoMemberships,
-        newMembership,
-      ];
+    // Build updated ngoMemberships array
+    final newMembership = NgoMembership(
+      ngoId: inviteCode.ngoId,
+      role: inviteCode.targetRole,
+      crossNgoConsent: false,
+      status: 'active',
+    );
+    final updatedMemberships = [
+      ...existingProfile.ngoMemberships,
+      newMembership,
+    ];
 
-      // Determine new platformRole — take the highest role
-      // BUT never downgrade SA via invite code
-      final newRole = _highestRole(
-        existingProfile.platformRole,
-        inviteCode.targetRole,
-      );
+    // Determine new platformRole — take the highest role
+    // BUT never downgrade SA via invite code
+    final newRole = _highestRole(
+      existingProfile.platformRole,
+      inviteCode.targetRole,
+    );
 
-      final updatedProfile = existingProfile.copyWith(
-        primaryNgoId: existingProfile.primaryNgoId.isEmpty
-            ? inviteCode.ngoId
-            : existingProfile.primaryNgoId,
-        ngoMemberships: updatedMemberships,
-        platformRole: newRole,
-      );
+    final updatedProfile = existingProfile.copyWith(
+      primaryNgoId: existingProfile.primaryNgoId.isEmpty
+          ? inviteCode.ngoId
+          : existingProfile.primaryNgoId,
+      ngoMemberships: updatedMemberships,
+      platformRole: newRole,
+    );
 
-      await _userRepository.saveVolunteerProfile(updatedProfile);
+    await _userRepository.saveVolunteerProfile(updatedProfile);
 
-      if (inviteCode.isSingleUse) {
-        await _inviteCodesDatasource.deleteInviteCode(code);
-      }
-
-      state = const AsyncValue.data(null);
-    } catch (e, st) {
-      state = AsyncValue.error(e, st);
+    if (inviteCode.isSingleUse) {
+      await _inviteCodesDatasource.deleteInviteCode(code);
     }
   }
 
-  // ── Private Helpers ────────────────────────────────────────────────────────
 
   /// Reconciles a user's Firestore role on every login.
   /// If their email is in the SA list but their role isn't SA, upgrades them.

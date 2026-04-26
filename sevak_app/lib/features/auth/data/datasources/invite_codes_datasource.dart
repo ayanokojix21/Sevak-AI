@@ -5,9 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../domain/entities/invite_code_entity.dart';
 
-final inviteCodeDatasourceProvider = Provider<InviteCodesDatasource>((ref) {
-  return InviteCodesDatasource();
-});
+
 
 class InviteCodesDatasource {
   final FirebaseFirestore _firestore;

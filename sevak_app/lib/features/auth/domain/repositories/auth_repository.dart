@@ -21,6 +21,9 @@ abstract class AuthRepository {
   /// Throws [AuthFailure].
   Future<UserCredential> signInWithGoogle();
 
+  /// Signs in the user anonymously (Community User Flow).
+  Future<UserCredential> signInAnonymously();
+
   /// Signs the current user out of the application.
   Future<void> signOut();
 }

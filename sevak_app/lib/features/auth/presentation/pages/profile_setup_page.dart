@@ -5,7 +5,8 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/snackbar_utils.dart';
-import '../controllers/auth_controller.dart';
+import '../../../../providers/auth_providers.dart';
+import '../../../location/data/location_service.dart';
 
 /// Post-signup profile completion page.
 /// Collects name, phone, city, and skills before the user can use the app.
@@ -72,6 +73,11 @@ class _ProfileSetupPageState extends ConsumerState<ProfileSetupPage> {
           city: _cityController.text.trim(),
           skills: _selectedSkills.toList(),
         );
+
+    final uid = ref.read(authStateProvider).value?.uid;
+    if (uid != null) {
+      await LocationService().updateVolunteerLocation(uid, force: true);
+    }
 
     if (mounted) {
       context.go('/home');

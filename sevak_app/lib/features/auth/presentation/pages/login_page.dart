@@ -6,7 +6,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/snackbar_utils.dart';
-import '../controllers/auth_controller.dart';
+import '../../../../providers/auth_providers.dart';
 
 class LoginPage extends ConsumerStatefulWidget {
   const LoginPage({super.key});
@@ -234,6 +234,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                               ),
                             ],
                           ),
+                          const SizedBox(height: 16),
                         ],
                       ),
                     ),

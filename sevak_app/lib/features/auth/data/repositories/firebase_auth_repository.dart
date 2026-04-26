@@ -2,18 +2,11 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/config/env_config.dart';
 import '../../../../core/errors/failures.dart';
 import '../../domain/repositories/auth_repository.dart';
 
-/// Riverpod provider for the AuthRepository
-final authRepositoryProvider = Provider<AuthRepository>((ref) {
-  return FirebaseAuthRepository(
-    FirebaseAuth.instance,
-    GoogleSignIn(
-      serverClientId: '29483186959-kkfe05gcogr1s638h81ponal5du3gt7i.apps.googleusercontent.com',
-    ),
-  );
-});
+
 
 /// Implementation of [AuthRepository] using Firebase Auth.
 class FirebaseAuthRepository implements AuthRepository {
@@ -90,6 +83,17 @@ class FirebaseAuthRepository implements AuthRepository {
       throw AuthFailure(e.message ?? 'Google sign in failed.');
     } catch (e) {
       throw const AuthFailure('An unexpected error occurred during Google sign in.');
+    }
+  }
+
+  @override
+  Future<UserCredential> signInAnonymously() async {
+    try {
+      return await _firebaseAuth.signInAnonymously();
+    } on FirebaseAuthException catch (e) {
+      throw AuthFailure(e.message ?? 'Anonymous sign in failed.');
+    } catch (e) {
+      throw const AuthFailure('An unexpected error occurred during anonymous sign in.');
     }
   }
 

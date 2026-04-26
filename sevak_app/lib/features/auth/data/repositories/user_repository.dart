@@ -5,10 +5,7 @@ import '../../../../core/constants/app_constants.dart';
 import '../../../../core/errors/failures.dart';
 import '../../domain/entities/volunteer.dart';
 
-/// Riverpod provider for the UserRepository.
-final userRepositoryProvider = Provider<UserRepository>((ref) {
-  return UserRepository(FirebaseFirestore.instance);
-});
+
 
 /// Handles reading and writing Volunteer profiles to Firestore.
 class UserRepository {
@@ -88,5 +85,40 @@ class UserRepository {
         .collection(AppConstants.volunteersCollection)
         .doc(uid)
         .update({'isAvailable': consent});
+  }
+
+  /// Removes a volunteer from an NGO. If they have no other NGOs, they become a CU.
+  Future<void> removeNgoMembership(String uid, String ngoId) async {
+    final doc = await _firestore.collection(AppConstants.volunteersCollection).doc(uid).get();
+    if (!doc.exists || doc.data() == null) return;
+    
+    final volunteer = Volunteer.fromJson(doc.data()!, doc.id);
+    
+    // Remove the membership
+    final updatedMemberships = volunteer.ngoMemberships.where((m) => m.ngoId != ngoId).toList();
+    
+    // If primary NGO is removed, assign a new one or clear it
+    String newPrimaryNgoId = volunteer.primaryNgoId;
+    if (newPrimaryNgoId == ngoId) {
+      newPrimaryNgoId = updatedMemberships.isNotEmpty ? updatedMemberships.first.ngoId : '';
+    }
+    
+    // If they have no NGOs left, they revert to a Community User
+    String newRole = volunteer.platformRole;
+    if (updatedMemberships.isEmpty) {
+      newRole = 'CU';
+    } else if (volunteer.primaryNgoId == ngoId && (newRole == 'CO' || newRole == 'NA')) {
+      // If they were admin/coordinator of the removed NGO, revert to VL for the fallback NGO
+      // unless we want to keep their role, but safe default is VL
+      newRole = 'VL'; 
+    }
+
+    final updatedVolunteer = volunteer.copyWith(
+      ngoMemberships: updatedMemberships,
+      primaryNgoId: newPrimaryNgoId,
+      platformRole: newRole,
+    );
+
+    await saveVolunteerProfile(updatedVolunteer);
   }
 }
