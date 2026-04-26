@@ -1,16 +1,18 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:geolocator/geolocator.dart';
 
 import '../../../../core/constants/role_definitions.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/snackbar_utils.dart';
-import '../../../auth/presentation/controllers/auth_controller.dart';
+import '../../../../providers/auth_providers.dart';
 import '../../../auth/data/repositories/user_repository.dart';
 import '../../../tasks/data/services/task_notification_service.dart';
 import '../../../../providers/ngo_providers.dart';
 import '../../../../providers/task_providers.dart';
+import '../../../../providers/community_report_providers.dart';
+import '../../../location/data/location_service.dart';
 
 /// Role-aware home page — renders role-specific content sections.
 class HomePage extends ConsumerStatefulWidget {
@@ -21,13 +23,63 @@ class HomePage extends ConsumerStatefulWidget {
 }
 
 class _HomePageState extends ConsumerState<HomePage> {
+  bool _gpsEnabled = true;
+  bool _locationGranted = true;
+
   @override
   void initState() {
     super.initState();
-    // Start Firestore listener for task notifications (Phase 4F)
+    // 1. Explicitly request notification permissions
+    TaskNotificationService.requestPermissions();
+
+    // 2. Start Firestore listeners and location setup
     final uid = ref.read(authStateProvider).value?.uid;
     if (uid != null) {
       TaskNotificationService.startTaskListener(uid);
+      _initRoleBasedListeners();
+      // Try to get location and show GPS banner if needed
+      _checkAndUpdateLocation(uid);
+    }
+  }
+
+  Future<void> _checkAndUpdateLocation(String uid) async {
+    // Check if permission is granted
+    final hasPermission = await LocationService.hasLocationPermission();
+    if (!hasPermission) {
+      final result = await LocationService.requestLocationPermission();
+      if (result == LocationPermission.denied ||
+          result == LocationPermission.deniedForever) {
+        if (mounted) setState(() => _locationGranted = false);
+        return;
+      }
+    }
+
+    // Check if GPS hardware is on
+    final serviceOn = await LocationService.isLocationServiceEnabled();
+    if (!serviceOn) {
+      if (mounted) setState(() => _gpsEnabled = false);
+      return;
+    }
+
+    if (mounted) setState(() { _gpsEnabled = true; _locationGranted = true; });
+
+    // Update location in Firestore
+    final success = await LocationService().updateVolunteerLocation(uid);
+    if (!success) {
+      // GPS might have been disabled mid-flight
+      final stillOn = await LocationService.isLocationServiceEnabled();
+      if (mounted && !stillOn) setState(() => _gpsEnabled = false);
+    }
+  }
+
+  Future<void> _initRoleBasedListeners() async {
+    final profile = await ref.read(volunteerProfileProvider.future);
+    if (profile != null &&
+        (profile.platformRole == 'CO' ||
+         profile.platformRole == 'NA' ||
+         profile.platformRole == 'coordinator' ||
+         profile.platformRole == 'ngo_admin')) {
+      TaskNotificationService.startCoordinatorListener(profile.primaryNgoId);
     }
   }
 
@@ -96,9 +148,68 @@ class _HomePageState extends ConsumerState<HomePage> {
                 ),
                 const SizedBox(height: 24),
 
-                // ══════════════════════════════════════════════════════════════
+                // Location/GPS Warning Banner
+                if (!_gpsEnabled || !_locationGranted)
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 24),
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: AppColors.error.withAlpha(20),
+                      border: Border.all(color: AppColors.error),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            const Icon(Icons.location_off, color: AppColors.error),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                !_locationGranted
+                                    ? 'Location permission denied'
+                                    : 'GPS is turned off',
+                                style: const TextStyle(
+                                  color: AppColors.error,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          !_locationGranted
+                              ? 'SevakAI needs location permission to match you with emergencies.'
+                              : 'SevakAI needs GPS to match you with nearby emergencies. Please turn it on.',
+                          style: const TextStyle(color: AppColors.textPrimary),
+                        ),
+                        const SizedBox(height: 12),
+                        SizedBox(
+                          width: double.infinity,
+                          child: FilledButton.icon(
+                            onPressed: () async {
+                              if (!_locationGranted) {
+                                await LocationService.openAppPermissionSettings();
+                              } else {
+                                await LocationService.openDeviceLocationSettings();
+                              }
+                            },
+                            icon: const Icon(Icons.settings),
+                            label: Text(!_locationGranted ? 'Open App Settings' : 'Turn On GPS'),
+                            style: FilledButton.styleFrom(
+                              backgroundColor: AppColors.error,
+                              foregroundColor: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
                 // SA SECTION — Super Admin Panel
-                // ══════════════════════════════════════════════════════════════
                 if (role == PlatformRole.SA) ...[
                   _SectionHeader(icon: Icons.admin_panel_settings, title: 'Super Admin', color: role.color),
                   const SizedBox(height: 12),
@@ -121,9 +232,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                   const SizedBox(height: 24),
                 ],
 
-                // ══════════════════════════════════════════════════════════════
                 // NA SECTION — NGO Admin (not shown for SA, SA has own panel)
-                // ══════════════════════════════════════════════════════════════
                 if (role == PlatformRole.NA) ...[
                   _SectionHeader(icon: Icons.business, title: 'NGO Admin', color: role.color),
                   const SizedBox(height: 12),
@@ -174,9 +283,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                   const SizedBox(height: 24),
                 ],
 
-                // ══════════════════════════════════════════════════════════════
                 // CO SECTION — Coordinator Dashboard
-                // ══════════════════════════════════════════════════════════════
                 if (role == PlatformRole.CO) ...[
                   _SectionHeader(icon: Icons.dashboard_rounded, title: 'Coordinator Dashboard', color: PlatformRole.CO.color),
                   const SizedBox(height: 12),
@@ -190,9 +297,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                   const SizedBox(height: 24),
                 ],
 
-                // ══════════════════════════════════════════════════════════════
                 // VL SECTION — Volunteer controls
-                // ══════════════════════════════════════════════════════════════
                 if (role == PlatformRole.VL) ...[
                   _SectionHeader(icon: Icons.volunteer_activism, title: 'Volunteer', color: PlatformRole.VL.color),
                   const SizedBox(height: 12),
@@ -227,50 +332,42 @@ class _HomePageState extends ConsumerState<HomePage> {
                   const SizedBox(height: 12),
 
                   // Availability toggle
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(14),
-                    child: BackdropFilter(
-                      filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                      child: Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: AppColors.bgSurface.withAlpha(120),
-                          borderRadius: BorderRadius.circular(14),
-                          border: Border.all(color: AppColors.border),
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: AppColors.bgSurface,
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: AppColors.border),
+                    ),
+                    child: Row(
+                      children: [
+                        const Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('Available for tasks',
+                                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+                              SizedBox(height: 2),
+                              Text('Toggle your availability for partner NGO tasks',
+                                  style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+                            ],
+                          ),
                         ),
-                        child: Row(
-                          children: [
-                            const Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text('Available for tasks',
-                                      style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
-                                  SizedBox(height: 2),
-                                  Text('Toggle your availability for partner NGO tasks',
-                                      style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
-                                ],
-                              ),
-                            ),
-                            Switch(
-                              value: profile.isAvailable,
-                              activeTrackColor: AppColors.accent.withAlpha(100),
-                              activeColor: AppColors.accent,
-                              onChanged: (val) {
-                                ref.read(userRepositoryProvider).updateCrossNgoConsent(profile.uid, val);
-                              },
-                            ),
-                          ],
+                        Switch(
+                          value: profile.isAvailable,
+                          activeTrackColor: AppColors.accent.withAlpha(100),
+                          activeThumbColor: AppColors.accent,
+                          onChanged: (val) {
+                            ref.read(userRepositoryProvider).updateCrossNgoConsent(profile.uid, val);
+                          },
                         ),
-                      ),
+                      ],
                     ),
                   ),
                   const SizedBox(height: 24),
                 ],
 
-                // ══════════════════════════════════════════════════════════════
                 // COMMUNITY ACTIONS (everyone can report needs)
-                // ══════════════════════════════════════════════════════════════
                 _SectionHeader(icon: Icons.campaign, title: 'Community Actions', color: AppColors.accent),
                 const SizedBox(height: 12),
                 _ActionCard(
@@ -278,14 +375,35 @@ class _HomePageState extends ConsumerState<HomePage> {
                   title: 'Report a Need',
                   subtitle: 'Submit a new community need for AI triage',
                   color: AppColors.accent,
-                  onTap: () => context.push('/submit-need'),
+                  onTap: () => context.push('/submit-community-report'),
                 ),
                 const SizedBox(height: 12),
 
-                // ══════════════════════════════════════════════════════════════
                 // DISCOVER NGOs — CU and VL only (SA/NA/CO already have NGO)
-                // ══════════════════════════════════════════════════════════════
                 if (role == PlatformRole.CU || role == PlatformRole.VL) ...[
+                  if (role == PlatformRole.CU) ...[
+                    _SectionHeader(icon: Icons.history, title: 'My Emergency Reports', color: AppColors.primary),
+                    const SizedBox(height: 12),
+                    Consumer(builder: (context, ref, _) {
+                      final reportsAsync = ref.watch(myCommunityReportsProvider);
+                      return reportsAsync.when(
+                        data: (reports) {
+                          if (reports.isEmpty) return const SizedBox.shrink();
+                          return Column(
+                            children: reports.take(2).map((report) => _InfoBanner(
+                              icon: Icons.assignment_outlined,
+                              text: '${report.needType}: ${report.status}',
+                              color: report.status == 'PENDING_APPROVAL' ? AppColors.warning : AppColors.success,
+                              onTap: () => context.push('/cu-dashboard'),
+                            )).toList(),
+                          );
+                        },
+                        loading: () => const SizedBox.shrink(),
+                        error: (_, __) => const SizedBox.shrink(),
+                      );
+                    }),
+                    const SizedBox(height: 16),
+                  ],
                   _ActionCard(
                     icon: Icons.explore,
                     title: 'Discover NGOs',
@@ -296,9 +414,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                   const SizedBox(height: 12),
                 ],
 
-                // ══════════════════════════════════════════════════════════════
                 // INVITE CODE — CU and VL only
-                // ══════════════════════════════════════════════════════════════
                 if (role == PlatformRole.CU || role == PlatformRole.VL) ...[
                   const SizedBox(height: 12),
                   _SectionHeader(icon: Icons.vpn_key, title: 'Have an Invite Code?', color: AppColors.textSecondary),
@@ -333,7 +449,6 @@ class _HomePageState extends ConsumerState<HomePage> {
   }
 }
 
-// ── Reusable Widgets ─────────────────────────────────────────────────────────
 
 class _SectionHeader extends StatelessWidget {
   final IconData icon;
@@ -385,7 +500,7 @@ class _ActionCard extends StatelessWidget {
       child: InkWell(
         borderRadius: BorderRadius.circular(14),
         onTap: onTap,
-        child: Container(
+        child: Ink(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(14),
@@ -461,6 +576,7 @@ class _InviteCodeSection extends ConsumerStatefulWidget {
 
 class _InviteCodeSectionState extends ConsumerState<_InviteCodeSection> {
   final _codeController = TextEditingController();
+  bool _isRedeeming = false;
 
   @override
   void dispose() {
@@ -468,20 +584,32 @@ class _InviteCodeSectionState extends ConsumerState<_InviteCodeSection> {
     super.dispose();
   }
 
+  Future<void> _redeemCode() async {
+    final code = _codeController.text.trim();
+    if (code.isEmpty) return;
+
+    setState(() => _isRedeeming = true);
+    try {
+      await ref.read(authControllerProvider.notifier).consumeInviteCode(code);
+      
+      if (!mounted) return;
+      _codeController.clear();
+      SnackbarUtils.showSuccess(context, 'Invite code redeemed successfully!');
+      
+      // Force refresh profile to check if skills are filled
+      final profile = ref.read(volunteerProfileProvider).value;
+      if (profile != null && profile.skills.isEmpty) {
+        if (mounted) context.go('/profile-setup');
+      }
+    } catch (e) {
+      if (mounted) SnackbarUtils.showError(context, e.toString());
+    } finally {
+      if (mounted) setState(() => _isRedeeming = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final authState = ref.watch(authControllerProvider);
-
-    ref.listen<AsyncValue<void>>(authControllerProvider, (prev, next) {
-      if (next.hasError) {
-        SnackbarUtils.showError(context, next.error.toString());
-      }
-      if (prev?.isLoading == true && next.hasValue && !next.isLoading) {
-        _codeController.clear();
-        SnackbarUtils.showSuccess(context, 'Invite code redeemed successfully!');
-      }
-    });
-
     return Row(
       children: [
         Expanded(
@@ -499,18 +627,12 @@ class _InviteCodeSectionState extends ConsumerState<_InviteCodeSection> {
         SizedBox(
           height: 48,
           child: FilledButton(
-            onPressed: authState.isLoading
-                ? null
-                : () {
-                    final code = _codeController.text.trim();
-                    if (code.isEmpty) return;
-                    ref.read(authControllerProvider.notifier).consumeInviteCode(code);
-                  },
+            onPressed: _isRedeeming ? null : _redeemCode,
             style: FilledButton.styleFrom(
               backgroundColor: AppColors.accent,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
-            child: authState.isLoading
+            child: _isRedeeming
                 ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                 : const Text('Redeem', style: TextStyle(color: AppColors.bgBase, fontWeight: FontWeight.w600)),
           ),
