@@ -62,6 +62,19 @@ service cloud.firestore {
       allow delete: if isNgoAdmin(resource.data.ngoId) || isCoordinator(resource.data.ngoId) || isSuperAdmin();
     }
 
+    // ── Community Reports ────────────────────────────────────────────────────
+    match /community_reports/{reportId} {
+      allow create: if isAuthenticated();
+      allow read: if (isAuthenticated() && resource.data.submittedBy == request.auth.uid) ||
+                     isCoordinator(resource.data.targetNgoId) ||
+                     isNgoAdmin(resource.data.targetNgoId) ||
+                     isSuperAdmin();
+      allow update: if isCoordinator(resource.data.targetNgoId) || 
+                       isNgoAdmin(resource.data.targetNgoId) ||
+                       isSuperAdmin();
+      allow delete: if isSuperAdmin();
+    }
+
     // ── Volunteers ───────────────────────────────────────────────────────────
     match /volunteers/{userId} {
       allow read, update: if (isAuthenticated() && request.auth.uid == userId) || 
