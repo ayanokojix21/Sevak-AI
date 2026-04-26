@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-// ── Urgency Color Palette (Semantic) ─────────────────────────────────────────
 class AppColors {
   AppColors._();
 
@@ -35,7 +34,6 @@ class AppColors {
   static const Color border = Color(0xFF2A2A3C);
 }
 
-// ── Theme ─────────────────────────────────────────────────────────────────────
 class AppTheme {
   AppTheme._();
 
@@ -53,7 +51,6 @@ class AppTheme {
         onSurface: AppColors.textPrimary,
       ),
 
-      // ── Typography ────────────────────────────────────────────────────────
       textTheme: GoogleFonts.outfitTextTheme().copyWith(
         displayLarge: GoogleFonts.outfit(
           fontSize: 32, fontWeight: FontWeight.w700, color: AppColors.textPrimary,
@@ -78,7 +75,6 @@ class AppTheme {
         ),
       ),
 
-      // ── Cards ─────────────────────────────────────────────────────────────
       cardTheme: CardThemeData(
         color: AppColors.bgSurface,
         elevation: 0,
@@ -89,7 +85,6 @@ class AppTheme {
         margin: EdgeInsets.zero,
       ),
 
-      // ── Input Fields ──────────────────────────────────────────────────────
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: AppColors.bgElevated,
@@ -113,7 +108,6 @@ class AppTheme {
         labelStyle: GoogleFonts.outfit(color: AppColors.textSecondary),
       ),
 
-      // ── Buttons ───────────────────────────────────────────────────────────
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.primary,
@@ -135,7 +129,6 @@ class AppTheme {
         ),
       ),
 
-      // ── App Bar ───────────────────────────────────────────────────────────
       appBarTheme: AppBarTheme(
         backgroundColor: AppColors.bgBase,
         elevation: 0,
@@ -146,7 +139,6 @@ class AppTheme {
         iconTheme: const IconThemeData(color: AppColors.textPrimary),
       ),
 
-      // ── Bottom Nav ────────────────────────────────────────────────────────
       bottomNavigationBarTheme: const BottomNavigationBarThemeData(
         backgroundColor: AppColors.bgSurface,
         selectedItemColor: AppColors.primary,
@@ -155,7 +147,6 @@ class AppTheme {
         elevation: 0,
       ),
 
-      // ── Divider ───────────────────────────────────────────────────────────
       dividerTheme: const DividerThemeData(
         color: AppColors.border,
         thickness: 1,

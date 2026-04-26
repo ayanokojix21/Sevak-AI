@@ -1,9 +1,12 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import 'core/theme/app_theme.dart';
-import 'features/auth/presentation/controllers/auth_controller.dart';
+import 'core/constants/role_definitions.dart';
+import 'features/auth/domain/entities/volunteer.dart';
+import 'providers/auth_providers.dart';
 import 'features/auth/presentation/pages/login_page.dart';
 import 'features/auth/presentation/pages/register_page.dart';
 import 'features/auth/presentation/pages/profile_setup_page.dart';
@@ -18,6 +21,8 @@ import 'features/ngos/presentation/pages/ngo_discovery_page.dart';
 import 'features/ngos/presentation/pages/register_ngo_page.dart';
 import 'features/tasks/presentation/pages/my_tasks_page.dart';
 import 'features/tasks/presentation/pages/task_detail_page.dart';
+import 'features/community_reports/presentation/pages/cu_dashboard_page.dart';
+import 'features/community_reports/presentation/pages/submit_community_report_page.dart';
 
 class SevakApp extends ConsumerWidget {
   const SevakApp({super.key});
@@ -39,50 +44,88 @@ final splashDelayProvider = FutureProvider<void>((ref) async {
   await Future.delayed(const Duration(seconds: 2));
 });
 
+/// Caches latest auth/profile snapshots and exposes them to [GoRouter.redirect].
+/// By storing state internally, the redirect closure never touches Riverpod [ref],
+/// which prevents the "cannot use ref after dependency changed" crash.
+class _RouterNotifier extends ChangeNotifier {
+  final Ref _ref;
+
+  AsyncValue<User?> _authState = const AsyncLoading();
+  AsyncValue<void> _splashDelay = const AsyncLoading();
+  AsyncValue<Volunteer?> _profileState = const AsyncLoading();
+
+  _RouterNotifier(this._ref) {
+    // Seed with current values immediately
+    _authState = _ref.read(authStateProvider);
+    _splashDelay = _ref.read(splashDelayProvider);
+    _profileState = _ref.read(volunteerProfileProvider);
+
+    // Keep in sync — when any of these change, cache the new value and wake router
+    _ref.listen<AsyncValue<User?>>(authStateProvider, (_, next) {
+      _authState = next;
+      notifyListeners();
+    });
+    _ref.listen<AsyncValue<void>>(splashDelayProvider, (_, next) {
+      _splashDelay = next;
+      notifyListeners();
+    });
+    _ref.listen<AsyncValue<Volunteer?>>(volunteerProfileProvider, (_, next) {
+      _profileState = next;
+      notifyListeners();
+    });
+  }
+
+  /// Pure redirect logic — reads only from cached fields, never from [ref].
+  String? redirect(GoRouterState state) {
+    // Still loading splash or auth — stay on splash
+    if (_authState.isLoading || _splashDelay.isLoading) return '/';
+
+    final isLoggedIn = _authState.value != null;
+    final loc = state.matchedLocation;
+    final isAuthRoute = loc == '/login' || loc == '/register';
+
+    // Not logged in → force login
+    if (!isLoggedIn && !isAuthRoute) return '/login';
+
+    // Logged in → leave splash / auth screens
+    if (isLoggedIn && (isAuthRoute || loc == '/')) {
+      final isAnon = _authState.value?.isAnonymous ?? false;
+      return isAnon ? '/cu-dashboard' : '/home';
+    }
+
+    // Role guards — only run after profile has resolved
+    if (isLoggedIn &&
+        _profileState.hasValue &&
+        _profileState.value != null) {
+      final role = PlatformRoleX.fromCode(_profileState.value!.platformRole);
+      if (loc == '/super-admin' && !role.canManagePlatform) return '/home';
+      if (loc == '/dashboard' && !role.canAccessDashboard) return '/home';
+      if (loc.startsWith('/ngo-admin') && !role.canManageNGO) return '/home';
+    }
+
+    return null;
+  }
+}
+
+final _routerNotifierProvider = ChangeNotifierProvider<_RouterNotifier>(
+  (ref) => _RouterNotifier(ref),
+);
+
+/// The GoRouter is a TRUE singleton — it is created once and never rebuilt.
+/// [ref.read] (not ref.watch) + [ref.keepAlive()] guarantee this.
+/// Navigation updates are driven entirely through [refreshListenable].
 final routerProvider = Provider<GoRouter>((ref) {
-  final authState = ref.watch(authStateProvider);
-  final splashDelay = ref.watch(splashDelayProvider);
-  final profileAsync = ref.watch(volunteerProfileProvider);
+  // keepAlive: prevent Riverpod from ever disposing/rebuilding this provider
+  ref.keepAlive();
+
+  // READ (not watch) — so routerProvider is never invalidated by notifier changes
+  final notifier = ref.read(_routerNotifierProvider);
 
   return GoRouter(
     initialLocation: '/',
-    redirect: (context, state) {
-      // Wait for auth + splash
-      if (authState.isLoading || splashDelay.isLoading) return '/';
+    refreshListenable: notifier,
+    redirect: (context, state) => notifier.redirect(state),
 
-      final isLoggedIn = authState.value != null;
-      final loc = state.matchedLocation;
-      final isAuthRoute = loc == '/login' || loc == '/register';
-
-      // Not logged in → force login (except splash)
-      if (!isLoggedIn && !isAuthRoute) return '/login';
-
-      // Logged in → redirect away from auth routes
-      if (isLoggedIn && (isAuthRoute || loc == '/')) {
-        return '/home';
-      }
-
-      // Route guards — block unauthorized access
-      if (isLoggedIn) {
-        final profile = profileAsync.value;
-        final role = profile?.platformRole ?? 'CU';
-
-        // SA-only routes
-        if (loc == '/super-admin' && role != 'SA') return '/home';
-
-        // Dashboard — CO, NA, SA only
-        if (loc == '/dashboard' && !['CO', 'NA', 'SA'].contains(role)) {
-          return '/home';
-        }
-
-        // NGO Admin — NA, SA only
-        if (loc.startsWith('/ngo-admin') && !['NA', 'SA'].contains(role)) {
-          return '/home';
-        }
-      }
-
-      return null;
-    },
     routes: [
       GoRoute(
         path: '/',
@@ -156,11 +199,19 @@ final routerProvider = Provider<GoRouter>((ref) {
           return TaskDetailPage(taskId: taskId);
         },
       ),
+      // Community User Flow
+      GoRoute(
+        path: '/cu-dashboard',
+        builder: (context, state) => const CuDashboardPage(),
+      ),
+      GoRoute(
+        path: '/submit-community-report',
+        builder: (context, state) => const SubmitCommunityReportPage(),
+      ),
     ],
   );
 });
 
-// ── Splash Screen ────────────────────────────────────────────────────────────
 
 class _SplashPage extends StatefulWidget {
   const _SplashPage();
