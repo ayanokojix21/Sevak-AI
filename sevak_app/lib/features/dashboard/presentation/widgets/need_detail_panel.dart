@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:intl/intl.dart';
@@ -5,6 +6,7 @@ import 'package:intl/intl.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/need_widgets.dart';
 import '../../../needs/domain/entities/need_entity.dart';
+import '../pages/live_tracking_page.dart';
 
 /// Detail panel displayed when a need is selected on the map or table.
 /// Shows photo, Gemini AI analysis, urgency badge, and claim status.
@@ -13,9 +15,11 @@ class NeedDetailPanel extends StatelessWidget {
   final String claimedByNgoName;
   final String? coordinatorNgoId;
   final VoidCallback? onClaim;
+  final VoidCallback? onApprove;   // Now used for "Retry AI Match" on stuck SCORED needs
+  final VoidCallback? onCancel;    // Cancel an already-assigned task
   final VoidCallback? onClose;
   final Future<void> Function()? onMatch; // triggers matching engine
-  final bool isMatching;                  // true while Gemini is running
+  final bool isMatching;                  // true while AI is running
 
   const NeedDetailPanel({
     super.key,
@@ -23,6 +27,8 @@ class NeedDetailPanel extends StatelessWidget {
     required this.claimedByNgoName,
     this.coordinatorNgoId,
     this.onClaim,
+    this.onApprove,
+    this.onCancel,
     this.onClose,
     this.onMatch,
     this.isMatching = false,
@@ -33,23 +39,26 @@ class NeedDetailPanel extends StatelessWidget {
     final urgencyColor = AppTheme.urgencyColor(need.urgencyScore);
     final urgencyLabel = AppTheme.urgencyLabel(need.urgencyScore);
     final isClaimed = need.ngoId.isNotEmpty;
-    final isClaimedByMe = need.ngoId == coordinatorNgoId;
     final dateFormatted = DateFormat('d MMM yyyy, h:mm a').format(need.createdAt);
 
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.bgSurface,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.border, width: 1),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withAlpha(64),
-            blurRadius: 24,
-            offset: const Offset(0, 8),
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(20),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+        child: Container(
+          decoration: BoxDecoration(
+            color: AppColors.bgSurface.withAlpha(220),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: AppColors.border, width: 1),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withAlpha(64),
+                blurRadius: 24,
+                offset: const Offset(0, 8),
+              ),
+            ],
           ),
-        ],
-      ),
-      child: Column(
+          child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -167,6 +176,57 @@ class NeedDetailPanel extends StatelessWidget {
                     const SizedBox(height: 16),
                   ],
 
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    margin: const EdgeInsets.only(bottom: 20),
+                    decoration: BoxDecoration(
+                      color: AppColors.bgSurface,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: AppColors.primary.withAlpha(50)),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.primary.withAlpha(15),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            const Icon(Icons.auto_awesome, size: 16, color: AppColors.primary),
+                            const SizedBox(width: 8),
+                            const Text('SITUATION INTELLIGENCE', 
+                                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11, letterSpacing: 0.8, color: AppColors.primary)),
+                            const Spacer(),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: AppColors.primary.withAlpha(20),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: const Text('2026 SOTA', style: TextStyle(fontSize: 8, fontWeight: FontWeight.bold, color: AppColors.primary)),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        _AiInfoRow(label: 'Impact Scale', value: '${need.peopleAffected} People Affected'),
+                        _AiInfoRow(label: 'Severity', value: need.scaleAssessment.severity, color: need.scaleAssessment.severity == 'CRITICAL' ? AppColors.error : AppColors.primary),
+                        _AiInfoRow(label: 'Vulnerable Groups', value: need.scaleAssessment.vulnerableGroups.isEmpty ? 'None Detected' : need.scaleAssessment.vulnerableGroups.join(', ')),
+                        _AiInfoRow(label: 'Infra Damage', value: need.scaleAssessment.infrastructureDamage),
+                        const SizedBox(height: 8),
+                        const Divider(height: 1, color: AppColors.border),
+                        const SizedBox(height: 12),
+                        Text(
+                          need.scaleAssessment.estimatedScope, 
+                          style: const TextStyle(fontSize: 12, fontStyle: FontStyle.italic, color: AppColors.textSecondary, height: 1.4),
+                        ),
+                      ],
+                    ),
+                  ),
+
                   // Location
                   _InfoRow(
                     icon: Icons.location_on_outlined,
@@ -227,64 +287,60 @@ class NeedDetailPanel extends StatelessWidget {
 
                   const SizedBox(height: 20),
 
-                  // ── Claim button ──────────────────────────────────────────
-                  if (!isClaimed && coordinatorNgoId != null && onClaim != null)
+                  if ((need.status == 'SCORED' || need.status == 'RAW') &&
+                      onApprove != null)
                     SizedBox(
                       height: 48,
                       child: FilledButton.icon(
-                        onPressed: onClaim,
-                        icon: const Icon(Icons.flag_rounded, size: 20),
-                        label: const Text('Claim for My NGO',
+                        onPressed: onApprove,
+                        icon: const Icon(Icons.auto_awesome, size: 20),
+                        label: const Text('Retry AI Match',
                             style: TextStyle(fontWeight: FontWeight.w600)),
                         style: FilledButton.styleFrom(
-                          backgroundColor: AppColors.accent,
-                          foregroundColor: AppColors.bgBase,
+                          backgroundColor: AppColors.primary,
+                          foregroundColor: Colors.white,
                           shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12)),
                         ),
                       ),
                     ),
 
-                  // ── Claimed banner ────────────────────────────────────────
-                  if (isClaimedByMe)
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: AppColors.accent.withAlpha(25),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: AppColors.accent.withAlpha(76)),
-                      ),
-                      child: const Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.check_circle, color: AppColors.accent, size: 18),
-                          SizedBox(width: 8),
-                          Text('Claimed by your NGO',
-                              style: TextStyle(
-                                  color: AppColors.accent, fontWeight: FontWeight.w600)),
-                        ],
+                  if ((need.status == 'ASSIGNED' || need.status == 'IN_PROGRESS' || need.status == 'SCORED') &&
+                      coordinatorNgoId != null && onCancel != null) ...[
+                    const SizedBox(height: 10),
+                    SizedBox(
+                      height: 48,
+                      child: OutlinedButton.icon(
+                        onPressed: onCancel,
+                        icon: const Icon(Icons.cancel_outlined, size: 20),
+                        label: const Text('Cancel Task',
+                            style: TextStyle(fontWeight: FontWeight.w600)),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: AppColors.error,
+                          side: BorderSide(color: AppColors.error.withAlpha(160)),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12)),
+                        ),
                       ),
                     ),
+                  ],
 
-                  // ── Find Best Volunteer button ────────────────────────────
-                  if (isClaimedByMe &&
-                      (need.status == 'SCORED' || need.status == 'RAW') &&
-                      onMatch != null) ...[
+                  if ((need.status == 'ASSIGNED' || need.status == 'IN_PROGRESS') && 
+                      need.assignedTo != null && need.assignedTo!.isNotEmpty) ...[
                     const SizedBox(height: 10),
                     SizedBox(
                       height: 48,
                       child: FilledButton.icon(
-                        onPressed: isMatching ? null : onMatch,
-                        icon: isMatching
-                            ? const SizedBox(
-                                width: 16, height: 16,
-                                child: CircularProgressIndicator(
-                                    strokeWidth: 2, color: Colors.white))
-                            : const Icon(Icons.auto_awesome, size: 18),
-                        label: Text(
-                          isMatching ? 'Matching...' : 'Find Best Volunteer',
-                          style: const TextStyle(fontWeight: FontWeight.w600),
-                        ),
+                        onPressed: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (context) => LiveTrackingPage(need: need),
+                            ),
+                          );
+                        },
+                        icon: const Icon(Icons.map_outlined, size: 20),
+                        label: const Text('Live Track Volunteer',
+                            style: TextStyle(fontWeight: FontWeight.w600)),
                         style: FilledButton.styleFrom(
                           backgroundColor: AppColors.primary,
                           foregroundColor: Colors.white,
@@ -300,11 +356,12 @@ class NeedDetailPanel extends StatelessWidget {
           ),
         ],
       ),
+        ),
+      ),
     );
   }
 }
 
-// ── Reusable Sub-Widgets ─────────────────────────────────────────────────────
 
 class _SectionLabel extends StatelessWidget {
   final String label;
@@ -365,6 +422,28 @@ class _InfoRow extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _AiInfoRow extends StatelessWidget {
+  final String label;
+  final String value;
+  final Color? color;
+
+  const _AiInfoRow({required this.label, required this.value, this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label, style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+          Text(value, style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: color ?? AppColors.textPrimary)),
+        ],
+      ),
     );
   }
 }
