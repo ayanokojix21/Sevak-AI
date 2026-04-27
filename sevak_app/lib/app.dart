@@ -48,7 +48,7 @@ class SevakApp extends ConsumerWidget {
 }
 
 final splashDelayProvider = FutureProvider<void>((ref) async {
-  await Future.delayed(const Duration(seconds: 2));
+  await Future.delayed(const Duration(milliseconds: 1200));
 });
 
 /// Caches latest auth/profile snapshots and exposes them to [GoRouter.redirect].
@@ -245,7 +245,7 @@ class _SplashPageState extends State<_SplashPage>
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1500),
+      duration: const Duration(milliseconds: 800),
     );
 
     _scaleAnimation = Tween<double>(begin: 0.5, end: 1.0).animate(
