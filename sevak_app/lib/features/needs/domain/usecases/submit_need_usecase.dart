@@ -1,17 +1,12 @@
 import 'dart:io';
+
 import '../entities/need_entity.dart';
 import '../repositories/need_repository.dart';
 
-/// Orchestrates the full "submit a need" flow.
-///
-/// Currently a thin pass-through, but kept as a distinct use case for two reasons:
-/// 1. Architectural consistency — every domain operation has its own use case.
-/// 2. Future validation / orchestration (e.g. image size guard, rate limiting,
-///    offline queuing) can be added here without touching the controller.
 class SubmitNeedUseCase {
-  final NeedRepository repository;
+  final NeedRepository _repository;
 
-  SubmitNeedUseCase(this.repository);
+  SubmitNeedUseCase(this._repository);
 
   Future<NeedEntity> call({
     required String rawText,
@@ -20,8 +15,8 @@ class SubmitNeedUseCase {
     List<int>? audioBytes,
     double? lat,
     double? lng,
-  }) async {
-    return await repository.submitNeed(
+  }) {
+    return _repository.submitNeed(
       rawText: rawText,
       imageFile: imageFile,
       ngoId: ngoId,

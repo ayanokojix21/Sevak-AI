@@ -22,6 +22,21 @@ class NeedsFirestoreDatasource {
     return NeedModel.fromJson(doc.data()!, doc.id);
   }
 
+  Stream<NeedModel?> streamNeedById(String needId) {
+    return _firestore
+        .collection(AppConstants.needsCollection)
+        .doc(needId)
+        .snapshots()
+        .map((doc) => doc.exists ? NeedModel.fromJson(doc.data()!, doc.id) : null);
+  }
+
+  Future<void> updateNeedStatus(String needId, String status) async {
+    await _firestore
+        .collection(AppConstants.needsCollection)
+        .doc(needId)
+        .update({'status': status});
+  }
+
   /// Streams needs filtered by optional [ngoId] and [status].
   /// Note: Firestore requires a composite index when both filters are active.
   /// Single-filter queries fall back gracefully to ordering by createdAt only.

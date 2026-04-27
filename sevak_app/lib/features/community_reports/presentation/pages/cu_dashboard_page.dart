@@ -128,40 +128,146 @@ class _ReportCard extends ConsumerWidget {
           ),
           if (report.status == 'APPROVED') ...[
             const SizedBox(height: 12),
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton.icon(
-                onPressed: () async {
-                  // Fetch the need document directly by ID
-                  final needsDs = ref.read(needsFirestoreProvider);
-                  final need = await needsDs.getNeedById(report.id);
-                  
-                  if (!context.mounted) return;
-                  
-                  if (need == null) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Could not find the emergency details.')),
-                    );
-                    return;
-                  }
+            StreamBuilder(
+              stream: ref.watch(needsFirestoreProvider).streamNeedById(report.id),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                final need = snapshot.data;
+                if (need == null) {
+                  return const Text('Emergency details not found.', style: TextStyle(color: AppColors.error));
+                }
 
-                  if (need.status == 'ASSIGNED' || need.status == 'IN_PROGRESS') {
-                    Navigator.of(context).push(MaterialPageRoute(
-                      builder: (context) => LiveTrackingPage(need: need),
-                    ));
-                  } else {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Volunteer not assigned yet. Please wait.')),
-                    );
-                  }
-                },
-                icon: const Icon(Icons.map, size: 18),
-                label: const Text('Live Track Response'),
-                style: FilledButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  foregroundColor: Colors.white,
-                ),
-              ),
+                if (need.status == 'CLOSED') {
+                  return Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: AppColors.success.withAlpha(20),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: AppColors.success.withAlpha(50)),
+                    ),
+                    child: const Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.check_circle, color: AppColors.success, size: 18),
+                        SizedBox(width: 8),
+                        Text(
+                          'Emergency Resolved & Closed',
+                          style: TextStyle(color: AppColors.success, fontWeight: FontWeight.bold),
+                        ),
+                      ],
+                    ),
+                  );
+                }
+
+                return Column(
+                  children: [
+                    if (need.status == 'COMPLETED') ...[
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: AppColors.warning.withAlpha(20),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: AppColors.warning.withAlpha(50)),
+                        ),
+                        child: const Row(
+                          children: [
+                            Icon(Icons.info_outline, color: AppColors.warning, size: 18),
+                            SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                'Volunteer marked this as resolved. Please verify and close.',
+                                style: TextStyle(color: AppColors.warning, fontWeight: FontWeight.w600, fontSize: 12),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                    ],
+
+                    Row(
+                      children: [
+                        if (need.status == 'ASSIGNED' || need.status == 'IN_PROGRESS') ...[
+                          Expanded(
+                            flex: 2,
+                            child: FilledButton.icon(
+                              onPressed: () {
+                                Navigator.of(context).push(MaterialPageRoute(
+                                  builder: (context) => LiveTrackingPage(need: need),
+                                ));
+                              },
+                              icon: const Icon(Icons.map, size: 18),
+                              label: const Text('Live Track'),
+                              style: FilledButton.styleFrom(
+                                backgroundColor: AppColors.primary,
+                                foregroundColor: Colors.white,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                        ],
+                        if (need.status == 'SCORED') ...[
+                          Expanded(
+                            flex: 2,
+                            child: FilledButton.icon(
+                              onPressed: null,
+                              icon: const Icon(Icons.search, size: 18),
+                              label: const Text('Finding Volunteer...'),
+                              style: FilledButton.styleFrom(
+                                backgroundColor: AppColors.border,
+                                foregroundColor: AppColors.textSecondary,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                        ],
+                        Expanded(
+                          flex: 1,
+                          child: FilledButton(
+                            onPressed: () async {
+                              final confirm = await showDialog<bool>(
+                                context: context,
+                                builder: (ctx) => AlertDialog(
+                                  title: const Text('Close Emergency?'),
+                                  content: const Text('Are you sure you want to close this emergency? This action cannot be undone.'),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () => Navigator.pop(ctx, false),
+                                      child: const Text('Cancel'),
+                                    ),
+                                    TextButton(
+                                      onPressed: () => Navigator.pop(ctx, true),
+                                      child: const Text('Close Emergency', style: TextStyle(color: AppColors.error)),
+                                    ),
+                                  ],
+                                ),
+                              );
+                              if (confirm == true) {
+                                await ref.read(needsFirestoreProvider).updateNeedStatus(need.id, 'CLOSED');
+                                if (context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(content: Text('Emergency Closed successfully.')),
+                                  );
+                                }
+                              }
+                            },
+                            style: FilledButton.styleFrom(
+                              backgroundColor: AppColors.error.withAlpha(20),
+                              foregroundColor: AppColors.error,
+                              padding: EdgeInsets.zero,
+                            ),
+                            child: const Text('Close'),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                );
+              },
             ),
           ],
         ],
