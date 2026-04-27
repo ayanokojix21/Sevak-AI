@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -6,7 +6,6 @@ import '../../../../core/constants/role_definitions.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/snackbar_utils.dart';
 import '../../../../providers/auth_providers.dart';
-import '../../../auth/data/datasources/invite_codes_datasource.dart';
 import '../../../ngos/data/datasources/join_request_datasource.dart';
 import '../../../partnerships/domain/entities/partnership_entity.dart';
 import '../../../partnerships/data/models/partnership_model.dart';
@@ -68,14 +67,14 @@ class _JoinRequestsTab extends ConsumerWidget {
     return requestsAsync.when(
       data: (requests) {
         if (requests.isEmpty) {
-          return const Center(
+          return Center(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.inbox, size: 48, color: AppColors.textDisabled),
+                Icon(Icons.inbox, size: 48, color: Theme.of(context).colorScheme.onSurfaceVariant),
                 SizedBox(height: 12),
                 Text('No pending join requests',
-                    style: TextStyle(color: AppColors.textSecondary)),
+                    style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
               ],
             ),
           );
@@ -90,9 +89,9 @@ class _JoinRequestsTab extends ConsumerWidget {
               margin: const EdgeInsets.only(bottom: 12),
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: AppColors.bgSurface,
+                color: Theme.of(context).colorScheme.surfaceContainerLow,
                 borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: AppColors.border),
+                border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -100,10 +99,10 @@ class _JoinRequestsTab extends ConsumerWidget {
                   Row(
                     children: [
                       CircleAvatar(
-                        backgroundColor: AppColors.primary.withAlpha(25),
+                        backgroundColor: Theme.of(context).colorScheme.primaryContainer,
                         child: Text(
                           req.userName.isNotEmpty ? req.userName[0].toUpperCase() : '?',
-                          style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold),
+                          style: TextStyle(color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold),
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -113,23 +112,23 @@ class _JoinRequestsTab extends ConsumerWidget {
                           children: [
                             Text(req.userName, style: const TextStyle(fontWeight: FontWeight.w600)),
                             Text(req.userEmail,
-                                style: const TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+                                style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 12)),
                           ],
                         ),
                       ),
                     ],
                   ),
                   if (req.message.isNotEmpty) ...[
-                    const SizedBox(height: 10),
+                    SizedBox(height: 10),
                     Container(
                       width: double.infinity,
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        color: AppColors.bgElevated,
+                        color: Theme.of(context).colorScheme.surfaceContainerHighest,
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text('"${req.message}"',
-                          style: const TextStyle(color: AppColors.textSecondary, fontSize: 13, fontStyle: FontStyle.italic)),
+                          style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 13, fontStyle: FontStyle.italic)),
                     ),
                   ],
                   const SizedBox(height: 12),
@@ -147,14 +146,14 @@ class _JoinRequestsTab extends ConsumerWidget {
                         ),
                         child: const Text('Reject'),
                       ),
-                      const SizedBox(width: 10),
+                      SizedBox(width: 10),
                       FilledButton(
                         onPressed: () {
                           ref.read(joinRequestDatasourceProvider).approveRequest(req);
                           SnackbarUtils.showSuccess(context, 'Volunteer approved & added!');
                         },
-                        style: FilledButton.styleFrom(backgroundColor: AppColors.accent),
-                        child: const Text('Approve', style: TextStyle(color: AppColors.bgBase)),
+                        style: FilledButton.styleFrom(backgroundColor: Theme.of(context).colorScheme.primary),
+                        child: const Text('Approve', style: TextStyle(color: Colors.white)),
                       ),
                     ],
                   ),
@@ -182,8 +181,8 @@ class _MembersTab extends ConsumerWidget {
     return membersAsync.when(
       data: (members) {
         if (members.isEmpty) {
-          return const Center(
-            child: Text('No members yet', style: TextStyle(color: AppColors.textSecondary)),
+          return Center(
+            child: Text('No members yet', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
           );
         }
 
@@ -197,9 +196,9 @@ class _MembersTab extends ConsumerWidget {
             return Container(
               margin: const EdgeInsets.only(bottom: 8),
               decoration: BoxDecoration(
-                color: AppColors.bgSurface,
+                color: Theme.of(context).colorScheme.surfaceContainerLow,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppColors.border),
+                border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
               ),
               child: ListTile(
                 leading: CircleAvatar(
@@ -208,7 +207,7 @@ class _MembersTab extends ConsumerWidget {
                 ),
                 title: Text(member.name, style: const TextStyle(fontWeight: FontWeight.w500)),
                 subtitle: Text(member.email,
-                    style: const TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+                    style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 12)),
                 trailing: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -221,9 +220,9 @@ class _MembersTab extends ConsumerWidget {
                       child: Text(role.label,
                           style: TextStyle(color: role.color, fontSize: 10, fontWeight: FontWeight.w600)),
                     ),
-                    const SizedBox(width: 8),
+                    SizedBox(width: 8),
                     IconButton(
-                      icon: const Icon(Icons.remove_circle_outline, color: AppColors.error, size: 20),
+                      icon: Icon(Icons.remove_circle_outline, color: Theme.of(context).colorScheme.error, size: 20),
                       onPressed: () async {
                         final confirm = await showDialog<bool>(
                           context: context,
@@ -231,10 +230,10 @@ class _MembersTab extends ConsumerWidget {
                             title: const Text('Remove Member?'),
                             content: Text('Are you sure you want to remove ${member.name} from this NGO?'),
                             actions: [
-                              TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+                              TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text('Cancel')),
                               FilledButton(
                                 onPressed: () => Navigator.pop(ctx, true),
-                                style: FilledButton.styleFrom(backgroundColor: AppColors.error),
+                                style: FilledButton.styleFrom(backgroundColor: Theme.of(context).colorScheme.error),
                                 child: const Text('Remove'),
                               ),
                             ],
@@ -271,9 +270,9 @@ class _InviteCodesTab extends ConsumerWidget {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        const Text(
+        Text(
           'Generate invite codes to fast-track volunteers and coordinators into your NGO.',
-          style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
+          style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 13),
         ),
         const SizedBox(height: 20),
 
@@ -313,18 +312,18 @@ class _InviteCodesTab extends ConsumerWidget {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.bgSurface,
+        backgroundColor: Theme.of(context).colorScheme.surfaceContainerLow,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text(title),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text('Share this code:', style: TextStyle(color: AppColors.textSecondary, fontSize: 13)),
-            const SizedBox(height: 12),
+            Text('Share this code:', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 13)),
+            SizedBox(height: 12),
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: AppColors.bgElevated,
+                color: Theme.of(context).colorScheme.surfaceContainerHighest,
                 borderRadius: BorderRadius.circular(12),
               ),
               child: SelectableText(
@@ -364,7 +363,7 @@ class _InviteButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: AppColors.bgSurface,
+      color: Theme.of(context).colorScheme.surfaceContainerLow,
       borderRadius: BorderRadius.circular(14),
       child: InkWell(
         borderRadius: BorderRadius.circular(14),
@@ -373,7 +372,7 @@ class _InviteButton extends StatelessWidget {
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: AppColors.border),
+            border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
           ),
           child: Row(
             children: [
@@ -385,13 +384,13 @@ class _InviteButton extends StatelessWidget {
                 ),
                 child: Icon(icon, color: color, size: 22),
               ),
-              const SizedBox(width: 14),
+              SizedBox(width: 14),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
-                    Text(subtitle, style: const TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+                    Text(subtitle, style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 12)),
                   ],
                 ),
               ),
@@ -434,16 +433,16 @@ class _PartnershipsTabState extends ConsumerState<_PartnershipsTab> {
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: AppColors.bgSurface,
+            color: Theme.of(context).colorScheme.surfaceContainerLow,
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: AppColors.border),
+            border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Row(
+              Row(
                 children: [
-                  Icon(Icons.handshake_outlined, size: 18, color: AppColors.primary),
+                  Icon(Icons.handshake_outlined, size: 18, color: Theme.of(context).colorScheme.primary),
                   SizedBox(width: 8),
                   Text('Send Partnership Invite',
                       style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
@@ -458,9 +457,9 @@ class _PartnershipsTabState extends ConsumerState<_PartnershipsTab> {
                   contentPadding: EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                 ),
               ),
-              const SizedBox(height: 12),
-              const Text('Share these need types:',
-                  style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+              SizedBox(height: 12),
+              Text('Share these need types:',
+                  style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant)),
               const SizedBox(height: 8),
               Wrap(
                 spacing: 8,
@@ -469,13 +468,13 @@ class _PartnershipsTabState extends ConsumerState<_PartnershipsTab> {
                   return FilterChip(
                     label: Text(skill, style: TextStyle(
                       fontSize: 11,
-                      color: selected ? AppColors.bgBase : AppColors.textSecondary,
+                      color: selected ? Colors.white : Theme.of(context).colorScheme.onSurfaceVariant,
                     )),
                     selected: selected,
-                    selectedColor: AppColors.primary,
-                    backgroundColor: AppColors.bgElevated,
-                    checkmarkColor: AppColors.bgBase,
-                    side: BorderSide(color: selected ? AppColors.primary : AppColors.border),
+                    selectedColor: Theme.of(context).colorScheme.primary,
+                    backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+                    checkmarkColor: Colors.white,
+                    side: BorderSide(color: selected ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.outlineVariant),
                     onSelected: (val) => setState(() {
                       if (val) _selectedSkills.add(skill);
                       else _selectedSkills.remove(skill);
@@ -483,13 +482,13 @@ class _PartnershipsTabState extends ConsumerState<_PartnershipsTab> {
                   );
                 }).toList(),
               ),
-              const SizedBox(height: 12),
+              SizedBox(height: 12),
               SizedBox(
                 width: double.infinity,
                 child: FilledButton.icon(
                   icon: const Icon(Icons.send, size: 16),
                   label: const Text('Send Invite'),
-                  style: FilledButton.styleFrom(backgroundColor: AppColors.primary),
+                  style: FilledButton.styleFrom(backgroundColor: Theme.of(context).colorScheme.primary),
                   onPressed: () async {
                     final targetId = _targetNgoController.text.trim();
                     if (targetId.isEmpty || _selectedSkills.isEmpty) {
@@ -511,29 +510,29 @@ class _PartnershipsTabState extends ConsumerState<_PartnershipsTab> {
             ],
           ),
         ),
-        const SizedBox(height: 20),
+        SizedBox(height: 20),
 
-        const Text('PARTNERSHIPS', style: TextStyle(
+        Text('PARTNERSHIPS', style: TextStyle(
           fontSize: 11, fontWeight: FontWeight.w700,
-          color: AppColors.textSecondary, letterSpacing: 1.2,
+          color: Theme.of(context).colorScheme.onSurfaceVariant, letterSpacing: 1.2,
         )),
         const SizedBox(height: 10),
         partnershipsAsync.when(
           data: (partnerships) {
             if (partnerships.isEmpty) {
-              return const Center(
+              return Center(
                 child: Padding(
                   padding: EdgeInsets.all(32),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.handshake_outlined, size: 48, color: AppColors.textDisabled),
+                      Icon(Icons.handshake_outlined, size: 48, color: Theme.of(context).colorScheme.onSurfaceVariant),
                       SizedBox(height: 12),
-                      Text('No partnerships yet', style: TextStyle(color: AppColors.textSecondary)),
+                      Text('No partnerships yet', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
                       SizedBox(height: 4),
                       Text('Send an invite above to start collaborating with other NGOs.',
                           textAlign: TextAlign.center,
-                          style: TextStyle(color: AppColors.textDisabled, fontSize: 12)),
+                          style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 12)),
                     ],
                   ),
                 ),
@@ -587,13 +586,13 @@ class _PartnershipCard extends StatelessWidget {
     String statusLabel;
     switch (partnership.status) {
       case PartnershipStatus.active:
-        statusColor = AppColors.success;
+        statusColor = SevakColors.success;
         statusLabel = 'ACTIVE';
       case PartnershipStatus.pending:
-        statusColor = AppColors.warning;
+        statusColor = SevakColors.warning;
         statusLabel = 'PENDING';
       case PartnershipStatus.rejected:
-        statusColor = AppColors.error;
+        statusColor = Theme.of(context).colorScheme.error;
         statusLabel = 'DECLINED';
     }
 
@@ -601,16 +600,16 @@ class _PartnershipCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppColors.bgSurface,
+        color: Theme.of(context).colorScheme.surfaceContainerLow,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              const Icon(Icons.business, size: 16, color: AppColors.textSecondary),
+              Icon(Icons.business, size: 16, color: Theme.of(context).colorScheme.onSurfaceVariant),
               const SizedBox(width: 6),
               Expanded(
                 child: Text('Partner: $partnerNgoId',
@@ -629,16 +628,16 @@ class _PartnershipCard extends StatelessWidget {
             ],
           ),
           if (partnership.sharedSkills.isNotEmpty) ...[
-            const SizedBox(height: 8),
+            SizedBox(height: 8),
             Wrap(
               spacing: 6,
               children: partnership.sharedSkills.map((s) => Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
-                  color: AppColors.bgElevated,
+                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
                   borderRadius: BorderRadius.circular(6),
                 ),
-                child: Text(s, style: const TextStyle(fontSize: 10, color: AppColors.textSecondary)),
+                child: Text(s, style: TextStyle(fontSize: 10, color: Theme.of(context).colorScheme.onSurfaceVariant)),
               )).toList(),
             ),
           ],
@@ -654,16 +653,16 @@ class _PartnershipCard extends StatelessWidget {
                     foregroundColor: Colors.red.shade300,
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   ),
-                  child: const Text('Decline', style: TextStyle(fontSize: 12)),
+                  child: Text('Decline', style: TextStyle(fontSize: 12)),
                 ),
-                const SizedBox(width: 8),
+                SizedBox(width: 8),
                 FilledButton(
                   onPressed: onAccept,
                   style: FilledButton.styleFrom(
-                    backgroundColor: AppColors.accent,
+                    backgroundColor: Theme.of(context).colorScheme.primary,
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   ),
-                  child: const Text('Accept', style: TextStyle(color: AppColors.bgBase, fontSize: 12)),
+                  child: const Text('Accept', style: TextStyle(color: Colors.white, fontSize: 12)),
                 ),
               ],
             ),

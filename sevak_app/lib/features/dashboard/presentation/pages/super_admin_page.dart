@@ -7,6 +7,7 @@ import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/snackbar_utils.dart';
 import '../../../../providers/ngo_providers.dart';
 import '../../../../providers/dashboard_providers.dart';
+import '../widgets/stat_cards.dart';
 
 class SuperAdminPage extends ConsumerStatefulWidget {
   const SuperAdminPage({super.key});
@@ -24,7 +25,7 @@ class _SuperAdminPageState extends ConsumerState<SuperAdminPage> {
         appBar: AppBar(
           title: const Text('Super Admin'),
           leading: IconButton(
-            icon: const Icon(Icons.arrow_back_ios_new),
+            icon: const Icon(Icons.arrow_back),
             onPressed: () => context.pop(),
           ),
           bottom: const TabBar(
@@ -58,36 +59,35 @@ class _NgoManagementTab extends ConsumerWidget {
       padding: const EdgeInsets.all(16),
       children: [
         // Pending Approvals
-        _sectionHeader('Pending Approvals', Icons.pending_actions, AppColors.warning),
+        _sectionHeader(context, 'Pending Approvals', Icons.pending_actions),
         const SizedBox(height: 10),
         pendingAsync.when(
           data: (ngos) => ngos.isEmpty
-              ? _emptyState('No pending requests', Icons.check_circle_outline)
+              ? _emptyState(context, 'No pending requests', Icons.check_circle_outline)
               : Column(
-                  children: ngos.map((ngo) => Container(
+                  children: ngos.map((ngo) {
+                    final cs = Theme.of(context).colorScheme;
+                    return Card(
+                    color: cs.surfaceContainerLow,
+                    elevation: 0,
                     margin: const EdgeInsets.only(bottom: 10),
-                    decoration: BoxDecoration(
-                      color: AppColors.bgSurface,
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: AppColors.warning.withAlpha(50)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      side: BorderSide(color: SevakColors.warning.withAlpha(60)),
                     ),
                     child: ListTile(
-                      leading: Container(
-                        width: 40, height: 40,
-                        decoration: BoxDecoration(
-                          color: AppColors.warning.withAlpha(25),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: const Icon(Icons.business, color: AppColors.warning, size: 20),
+                      leading: CircleAvatar(
+                        backgroundColor: SevakColors.warning.withAlpha(25),
+                        child: Icon(Icons.business, color: SevakColors.warning, size: 20),
                       ),
                       title: Text(ngo.name, style: const TextStyle(fontWeight: FontWeight.w600)),
                       subtitle: Text('${ngo.city.isNotEmpty ? ngo.city : "No city"} · ${ngo.createdAt.day}/${ngo.createdAt.month}/${ngo.createdAt.year}',
-                          style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                          style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
                       trailing: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           IconButton(
-                            icon: const Icon(Icons.check_circle, color: AppColors.accent),
+                            icon: Icon(Icons.check_circle, color: SevakColors.success),
                             tooltip: 'Approve',
                             onPressed: () {
                               ref.read(ngosDatasourceProvider).approveNgo(ngo.id, ngo.adminUid);
@@ -95,7 +95,7 @@ class _NgoManagementTab extends ConsumerWidget {
                             },
                           ),
                           IconButton(
-                            icon: Icon(Icons.cancel, color: Colors.red.shade400),
+                            icon: Icon(Icons.cancel, color: cs.error),
                             tooltip: 'Reject',
                             onPressed: () {
                               ref.read(ngosDatasourceProvider).updateNgoStatus(ngo.id, 'rejected');
@@ -105,7 +105,7 @@ class _NgoManagementTab extends ConsumerWidget {
                         ],
                       ),
                     ),
-                  )).toList(),
+                  );}).toList(),
                 ),
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (e, _) => Text('Error: $e'),
@@ -114,53 +114,52 @@ class _NgoManagementTab extends ConsumerWidget {
         const SizedBox(height: 28),
 
         // Active NGOs
-        _sectionHeader('Active NGOs', Icons.verified, AppColors.accent),
+        _sectionHeader(context, 'Active NGOs', Icons.verified),
         const SizedBox(height: 10),
         activeAsync.when(
           data: (ngos) => ngos.isEmpty
-              ? _emptyState('No active NGOs yet', Icons.business_outlined)
+              ? _emptyState(context, 'No active NGOs yet', Icons.business_outlined)
               : Column(
-                  children: ngos.map((ngo) => Container(
+                  children: ngos.map((ngo) {
+                    final cs = Theme.of(context).colorScheme;
+                    return Card(
+                    color: cs.surfaceContainerLow,
+                    elevation: 0,
                     margin: const EdgeInsets.only(bottom: 8),
-                    decoration: BoxDecoration(
-                      color: AppColors.bgSurface,
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: AppColors.border),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      side: BorderSide(color: cs.outlineVariant),
                     ),
                     child: ListTile(
-                      leading: Container(
-                        width: 40, height: 40,
-                        decoration: BoxDecoration(
-                          color: AppColors.accent.withAlpha(20),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: const Icon(Icons.business, color: AppColors.accent, size: 20),
+                      leading: CircleAvatar(
+                        backgroundColor: cs.primaryContainer,
+                        child: Icon(Icons.business, color: cs.onPrimaryContainer, size: 20),
                       ),
                       title: Text(ngo.name, style: const TextStyle(fontWeight: FontWeight.w600)),
                       subtitle: Text('${ngo.city.isNotEmpty ? ngo.city : "—"} · ${ngo.volunteerCount} members',
-                          style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                          style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant)),
                       trailing: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           IconButton(
-                            icon: const Icon(Icons.open_in_new, size: 18, color: AppColors.primary),
+                            icon: Icon(Icons.open_in_new, size: 18, color: cs.primary),
                             tooltip: 'Manage',
                             onPressed: () => context.push('/ngo-admin/${ngo.id}'),
                           ),
                           IconButton(
-                            icon: Icon(Icons.delete_forever, size: 20, color: AppColors.error),
+                            icon: Icon(Icons.delete_forever, size: 20, color: cs.error),
                             tooltip: 'Suspend NGO',
                             onPressed: () async {
                               final confirm = await showDialog<bool>(
                                 context: context,
                                 builder: (ctx) => AlertDialog(
                                   title: const Text('Suspend NGO?'),
-                                  content: Text('Are you sure you want to suspend ${ngo.name}? This will remove it from the active list.'),
+                                  content: Text('Are you sure you want to suspend ${ngo.name}?'),
                                   actions: [
                                     TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
                                     FilledButton(
                                       onPressed: () => Navigator.pop(ctx, true),
-                                      style: FilledButton.styleFrom(backgroundColor: AppColors.error),
+                                      style: FilledButton.styleFrom(backgroundColor: cs.error, foregroundColor: cs.onError),
                                       child: const Text('Suspend'),
                                     ),
                                   ],
@@ -168,16 +167,14 @@ class _NgoManagementTab extends ConsumerWidget {
                               );
                               if (confirm == true) {
                                 await ref.read(ngosDatasourceProvider).updateNgoStatus(ngo.id, 'suspended');
-                                if (context.mounted) {
-                                  SnackbarUtils.showError(context, 'NGO Suspended');
-                                }
+                                if (context.mounted) SnackbarUtils.showError(context, 'NGO Suspended');
                               }
                             },
                           ),
                         ],
                       ),
                     ),
-                  )).toList(),
+                  );}).toList(),
                 ),
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (e, _) => Text('Error: $e'),
@@ -186,24 +183,27 @@ class _NgoManagementTab extends ConsumerWidget {
     );
   }
 
-  Widget _sectionHeader(String title, IconData icon, Color color) {
+  Widget _sectionHeader(BuildContext context, String title, IconData icon) {
+    final cs = Theme.of(context).colorScheme;
     return Row(
       children: [
-        Icon(icon, size: 16, color: color),
+        Icon(icon, size: 16, color: cs.primary),
         const SizedBox(width: 6),
-        Text(title.toUpperCase(), style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 1.2)),
+        Text(title.toUpperCase(),
+            style: TextStyle(color: cs.primary, fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 1.2)),
       ],
     );
   }
 
-  Widget _emptyState(String message, IconData icon) {
+  Widget _emptyState(BuildContext context, String message, IconData icon) {
+    final cs = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 20),
       child: Column(
         children: [
-          Icon(icon, size: 36, color: AppColors.textDisabled),
+          Icon(icon, size: 36, color: cs.onSurfaceVariant),
           const SizedBox(height: 8),
-          Text(message, style: const TextStyle(color: AppColors.textSecondary)),
+          Text(message, style: TextStyle(color: cs.onSurfaceVariant)),
         ],
       ),
     );
@@ -221,34 +221,34 @@ class _PlatformAnalyticsTab extends ConsumerWidget {
     final allNgos = ref.watch(allNgosProvider);
     final allNeeds = ref.watch(allNeedsStreamProvider);
 
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        Row(
+        final cs = Theme.of(context).colorScheme;
+        return ListView(
+          padding: const EdgeInsets.all(16),
           children: [
-            const Icon(Icons.analytics, size: 16, color: AppColors.primary),
-            const SizedBox(width: 6),
-            const Text('LIVE PLATFORM METRICS', style: TextStyle(color: AppColors.primary, fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 1.2)),
-          ],
-        ),
+            Row(
+              children: [
+                Icon(Icons.analytics, size: 16, color: cs.primary),
+                const SizedBox(width: 6),
+                Text('LIVE PLATFORM METRICS',
+                    style: TextStyle(color: cs.primary, fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 1.2)),
+              ],
+            ),
         const SizedBox(height: 16),
         Row(
           children: [
-            Expanded(
-              child: _buildStatCard(
-                'Active NGOs',
-                activeNgos.when(data: (n) => '${n.length}', loading: () => '...', error: (_, __) => '—'),
-                AppColors.primary,
-                Icons.business,
+              Expanded(
+              child: StatCards(
+                title: 'Active NGOs',
+                value: activeNgos.when(data: (n) => '${n.length}', loading: () => '...', error: (_, __) => '—'),
+                icon: Icons.business,
               ),
             ),
             const SizedBox(width: 12),
             Expanded(
-              child: _buildStatCard(
-                'Total NGOs',
-                allNgos.when(data: (n) => '${n.length}', loading: () => '...', error: (_, __) => '—'),
-                AppColors.accent,
-                Icons.domain,
+              child: StatCards(
+                title: 'Total NGOs',
+                value: allNgos.when(data: (n) => '${n.length}', loading: () => '...', error: (_, __) => '—'),
+                icon: Icons.domain,
               ),
             ),
           ],
@@ -257,24 +257,23 @@ class _PlatformAnalyticsTab extends ConsumerWidget {
         Row(
           children: [
             Expanded(
-              child: _buildStatCard(
-                'Total Needs',
-                allNeeds.when(data: (n) => '${n.length}', loading: () => '...', error: (_, __) => '—'),
-                const Color(0xFF6C63FF),
-                Icons.campaign,
+              child: StatCards(
+                title: 'Total Needs',
+                value: allNeeds.when(data: (n) => '${n.length}', loading: () => '...', error: (_, __) => '—'),
+                icon: Icons.campaign,
               ),
             ),
             const SizedBox(width: 12),
             Expanded(
-              child: _buildStatCard(
-                'Resolved',
-                allNeeds.when(
+              child: StatCards(
+                title: 'Resolved',
+                value: allNeeds.when(
                   data: (n) => '${n.where((need) => need.status == AppConstants.statusCompleted).length}',
                   loading: () => '...',
                   error: (_, __) => '—',
                 ),
-                const Color(0xFF4CAF50),
-                Icons.check_circle,
+                icon: Icons.check_circle,
+                accentColor: SevakColors.success,
               ),
             ),
           ],
@@ -287,42 +286,14 @@ class _PlatformAnalyticsTab extends ConsumerWidget {
             icon: const Icon(Icons.campaign, size: 18),
             label: const Text('Platform-Wide Emergency Broadcast'),
             style: FilledButton.styleFrom(
-              backgroundColor: Colors.red.shade700,
-              foregroundColor: Colors.white,
+              backgroundColor: cs.error,
+              foregroundColor: cs.onError,
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
-            onPressed: () {
-              SnackbarUtils.showSuccess(context, 'Emergency broadcast sent!');
-            },
+            onPressed: () => SnackbarUtils.showSuccess(context, 'Emergency broadcast sent!'),
           ),
         ),
       ],
-    );
-  }
-
-  Widget _buildStatCard(String title, String value, Color color, IconData icon) {
-    return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: color.withAlpha(15),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: color.withAlpha(40)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(icon, size: 14, color: color),
-              const SizedBox(width: 6),
-              Text(title, style: TextStyle(fontSize: 11, color: color, fontWeight: FontWeight.w600)),
-            ],
-          ),
-          const SizedBox(height: 10),
-          Text(value, style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
-        ],
-      ),
     );
   }
 }

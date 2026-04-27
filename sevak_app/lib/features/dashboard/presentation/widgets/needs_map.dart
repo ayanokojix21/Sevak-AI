@@ -6,9 +6,8 @@ import 'package:latlong2/latlong.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../needs/domain/entities/need_entity.dart';
 
-/// Interactive map displaying needs as color-coded pins.
+/// Interactive map displaying needs as urgency-colored pins with M3 styling.
 /// Uses flutter_map + OpenStreetMap (free, no API key).
-/// Marker clustering prevents overlap in high-density areas.
 class NeedsMap extends StatefulWidget {
   final List<NeedEntity> needs;
   final NeedEntity? selectedNeed;
@@ -31,7 +30,8 @@ class _NeedsMapState extends State<NeedsMap> {
 
   @override
   Widget build(BuildContext context) {
-    // Default center: India (Lucknow) if no needs have coordinates
+    final cs = Theme.of(context).colorScheme;
+
     final centerLat = widget.needs.isNotEmpty
         ? widget.needs
                 .where((n) => n.lat != 0.0)
@@ -67,29 +67,25 @@ class _NeedsMapState extends State<NeedsMap> {
               ),
             ),
             children: [
-              // OSM Tile Layer — free, no API key needed
               TileLayer(
                 urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                 userAgentPackageName: 'com.sevakai.sevak_app',
                 maxZoom: 19,
               ),
-
-              // Marker Cluster Layer for high-density areas
               MarkerClusterLayerWidget(
                 options: MarkerClusterLayerOptions(
                   maxClusterRadius: 80,
                   size: const Size(48, 48),
                   markers: markers,
                   builder: (context, clusterMarkers) {
-                    // Determine cluster color by highest urgency in cluster
                     return Container(
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: AppColors.primary.withAlpha(204),
+                        color: cs.primary.withAlpha(204),
                         border: Border.all(color: Colors.white, width: 2),
                         boxShadow: [
                           BoxShadow(
-                            color: AppColors.primary.withAlpha(102),
+                            color: cs.primary.withAlpha(102),
                             blurRadius: 8,
                             spreadRadius: 2,
                           ),
@@ -112,61 +108,53 @@ class _NeedsMapState extends State<NeedsMap> {
             ],
           ),
 
-          // Map unavailable fallback overlay
+          // Loading fallback
           if (!_mapReady && markers.isEmpty)
             Container(
-              color: AppColors.bgSurface,
-              child: const Center(
+              color: cs.surfaceContainerLow,
+              child: Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.map_outlined, size: 48, color: AppColors.textDisabled),
-                    SizedBox(height: 12),
-                    Text(
-                      'Loading map...',
-                      style: TextStyle(color: AppColors.textSecondary),
-                    ),
+                    Icon(Icons.map_outlined,
+                        size: 48, color: cs.onSurfaceVariant),
+                    const SizedBox(height: 12),
+                    Text('Loading map...',
+                        style: TextStyle(color: cs.onSurfaceVariant)),
                   ],
                 ),
               ),
             ),
 
-          // Zoom controls
+          // M3 zoom controls
           Positioned(
             right: 12,
             bottom: 12,
             child: Column(
               children: [
                 _MapButton(
-                  icon: Icons.add,
+                  icon: Icons.add_rounded,
                   onPressed: () {
-                    final currentZoom = _mapController.camera.zoom;
+                    final z = _mapController.camera.zoom;
                     _mapController.move(
-                      _mapController.camera.center,
-                      (currentZoom + 1).clamp(3.0, 18.0),
-                    );
+                        _mapController.camera.center, (z + 1).clamp(3.0, 18.0));
                   },
                 ),
                 const SizedBox(height: 4),
                 _MapButton(
-                  icon: Icons.remove,
+                  icon: Icons.remove_rounded,
                   onPressed: () {
-                    final currentZoom = _mapController.camera.zoom;
+                    final z = _mapController.camera.zoom;
                     _mapController.move(
-                      _mapController.camera.center,
-                      (currentZoom - 1).clamp(3.0, 18.0),
-                    );
+                        _mapController.camera.center, (z - 1).clamp(3.0, 18.0));
                   },
                 ),
                 const SizedBox(height: 4),
                 _MapButton(
-                  icon: Icons.center_focus_strong,
+                  icon: Icons.center_focus_strong_rounded,
                   onPressed: () {
                     if (widget.needs.isNotEmpty) {
-                      _mapController.move(
-                        LatLng(centerLat, centerLng),
-                        11.0,
-                      );
+                      _mapController.move(LatLng(centerLat, centerLng), 11.0);
                     }
                   },
                 ),
@@ -189,7 +177,6 @@ class _NeedsMapState extends State<NeedsMap> {
       child: GestureDetector(
         onTap: () {
           widget.onNeedTapped(need);
-          // Animate to selected pin
           _mapController.move(LatLng(need.lat, need.lng), 14.0);
         },
         child: AnimatedContainer(
@@ -245,17 +232,18 @@ class _MapButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return Material(
-      color: AppColors.bgElevated.withAlpha(230),
+      color: cs.surfaceContainerHighest,
       borderRadius: BorderRadius.circular(8),
+      elevation: 2,
       child: InkWell(
         borderRadius: BorderRadius.circular(8),
         onTap: onPressed,
-        child: Container(
+        child: SizedBox(
           width: 36,
           height: 36,
-          alignment: Alignment.center,
-          child: Icon(icon, size: 18, color: AppColors.textPrimary),
+          child: Icon(icon, size: 18, color: cs.onSurface),
         ),
       ),
     );

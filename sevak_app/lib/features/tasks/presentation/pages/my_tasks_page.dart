@@ -13,53 +13,43 @@ class MyTasksPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final cs = Theme.of(context).colorScheme;
+    final tt = Theme.of(context).textTheme;
     final tasksAsync = ref.watch(myTasksStreamProvider);
 
     ref.listen<AsyncValue<void>>(taskControllerProvider, (_, next) {
-      if (next.hasError) SnackbarUtils.showError(context, next.error.toString());
+      if (next.hasError)
+        SnackbarUtils.showError(context, next.error.toString());
     });
 
     return Scaffold(
-      backgroundColor: AppColors.bgBase,
       appBar: AppBar(
-        backgroundColor: AppColors.bgBase,
-        title: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(6),
-              decoration: BoxDecoration(
-                color: AppColors.accent.withAlpha(25),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: const Icon(Icons.task_alt, color: AppColors.accent, size: 18),
-            ),
-            const SizedBox(width: 8),
-            const Text('My Tasks', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700)),
-          ],
-        ),
+        title: const Text('My Tasks'),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new),
+          icon: const Icon(Icons.arrow_back),
           onPressed: () => context.pop(),
         ),
       ),
       body: tasksAsync.when(
         data: (tasks) {
           if (tasks.isEmpty) {
-            return const Center(
+            return Center(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.inbox_outlined, size: 64, color: AppColors.textDisabled),
-                  SizedBox(height: 16),
-                  Text('No active tasks', style: TextStyle(fontSize: 16, color: AppColors.textSecondary)),
-                  SizedBox(height: 4),
-                  Text('You will be notified when a need is assigned to you.',
-                      style: TextStyle(color: AppColors.textDisabled, fontSize: 13)),
+                  Icon(Icons.inbox_outlined, size: 64, color: cs.onSurfaceVariant),
+                  const SizedBox(height: 16),
+                  Text('No active tasks', style: tt.titleMedium),
+                  const SizedBox(height: 4),
+                  Text(
+                    "You'll be notified when a need is assigned to you.",
+                    style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant),
+                    textAlign: TextAlign.center,
+                  ),
                 ],
               ),
             );
           }
-
           return ListView.builder(
             padding: const EdgeInsets.all(16),
             itemCount: tasks.length,
@@ -69,8 +59,8 @@ class MyTasksPage extends ConsumerWidget {
             ),
           );
         },
-        loading: () => const Center(child: CircularProgressIndicator(color: AppColors.accent)),
-        error: (e, _) => Center(child: Text('Error loading tasks: $e')),
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (e, _) => Center(child: Text('Error: $e')),
       ),
     );
   }
@@ -84,91 +74,95 @@ class _TaskCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final urgencyColor = task.urgencyScore >= 80
-        ? AppColors.error
-        : task.urgencyScore >= 50
-            ? AppColors.warning
-            : AppColors.success;
+    final cs = Theme.of(context).colorScheme;
+    final tt = Theme.of(context).textTheme;
+    final urgencyColor = AppTheme.urgencyColor(task.urgencyScore);
 
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: AppColors.bgSurface,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: AppColors.border),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                // Urgency dot
-                Container(
-                  width: 10, height: 10,
-                  decoration: BoxDecoration(color: urgencyColor, shape: BoxShape.circle),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    task.needType,
-                    style: TextStyle(
-                      color: urgencyColor,
-                      fontWeight: FontWeight.w700,
-                      fontSize: 12,
-                      letterSpacing: 0.8,
-                    ),
-                  ),
-                ),
-                // Cross-NGO badge
-                if (task.isCrossNgo)
+    return Card(
+      color: cs.surfaceContainerLow,
+      elevation: 0,
+      margin: const EdgeInsets.only(bottom: 12),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: cs.outlineVariant),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  // Urgency dot
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-                    decoration: BoxDecoration(
-                      color: AppColors.primary.withAlpha(25),
-                      borderRadius: BorderRadius.circular(6),
-                      border: Border.all(color: AppColors.primary.withAlpha(80)),
+                    width: 10, height: 10,
+                    decoration:
+                        BoxDecoration(color: urgencyColor, shape: BoxShape.circle),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(task.needType,
+                        style: tt.labelSmall?.copyWith(
+                            color: urgencyColor,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 0.8)),
+                  ),
+                  // Cross-NGO badge
+                  if (task.isCrossNgo)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 7, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: cs.primaryContainer,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text('PARTNER',
+                          style: tt.labelSmall?.copyWith(
+                              color: cs.onPrimaryContainer,
+                              fontSize: 9,
+                              fontWeight: FontWeight.w700)),
                     ),
-                    child: const Text('PARTNER', style: TextStyle(
-                      color: AppColors.primary, fontSize: 9, fontWeight: FontWeight.w700,
-                    )),
+                  const SizedBox(width: 8),
+                  // Status chip
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: cs.surfaceContainerHighest,
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(task.status,
+                        style: tt.labelSmall?.copyWith(
+                            color: cs.onSurfaceVariant, fontSize: 10)),
                   ),
-                const SizedBox(width: 8),
-                // Status chip
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: AppColors.bgElevated,
-                    borderRadius: BorderRadius.circular(6),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Text(task.description,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: tt.bodyMedium),
+              const SizedBox(height: 6),
+              Row(
+                children: [
+                  Icon(Icons.location_on_outlined,
+                      size: 13, color: cs.onSurfaceVariant),
+                  const SizedBox(width: 4),
+                  Expanded(
+                    child: Text(task.location,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: tt.bodySmall
+                            ?.copyWith(color: cs.onSurfaceVariant)),
                   ),
-                  child: Text(task.status,
-                      style: const TextStyle(color: AppColors.textSecondary, fontSize: 10)),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Text(
-              task.description,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontSize: 14),
-            ),
-            const SizedBox(height: 6),
-            Row(
-              children: [
-                const Icon(Icons.location_on_outlined, size: 13, color: AppColors.textSecondary),
-                const SizedBox(width: 4),
-                Expanded(
-                  child: Text(task.location,
-                      maxLines: 1, overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(color: AppColors.textSecondary, fontSize: 12)),
-                ),
-                const Icon(Icons.chevron_right, size: 16, color: AppColors.textDisabled),
-              ],
-            ),
-          ],
+                  Icon(Icons.chevron_right, size: 16, color: cs.onSurfaceVariant),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );

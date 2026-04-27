@@ -43,28 +43,26 @@ class TaskDetailPage extends ConsumerWidget {
     if (task == null) {
       return Scaffold(
         appBar: AppBar(
-          leading: IconButton(onPressed: () => context.pop(), icon: const Icon(Icons.arrow_back_ios_new)),
+          leading: IconButton(onPressed: () => context.pop(), icon: const Icon(Icons.arrow_back)),
         ),
-        body: const Center(
+        body: Center(
           child: Text('Task not found or already completed.',
-              style: TextStyle(color: AppColors.textSecondary)),
+              style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
         ),
       );
     }
 
-    final urgencyColor = task.urgencyScore >= 80
-        ? AppColors.error
-        : task.urgencyScore >= 50 ? AppColors.warning : AppColors.success;
+    final cs = Theme.of(context).colorScheme;
+    final tt = Theme.of(context).textTheme;
+    final urgencyColor = AppTheme.urgencyColor(task.urgencyScore);
 
     return Scaffold(
-      backgroundColor: AppColors.bgBase,
       appBar: AppBar(
-        backgroundColor: AppColors.bgBase,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new),
+          icon: const Icon(Icons.arrow_back),
           onPressed: () => context.pop(),
         ),
-        title: const Text('Task Details', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700)),
+        title: const Text('Task Details'),
       ),
       body: Stack(
         children: [
@@ -80,7 +78,6 @@ class TaskDetailPage extends ConsumerWidget {
                       decoration: BoxDecoration(
                         color: urgencyColor.withAlpha(25),
                         borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: urgencyColor.withAlpha(80)),
                       ),
                       child: Text(task.needType,
                           style: TextStyle(color: urgencyColor, fontWeight: FontWeight.w700, fontSize: 12)),
@@ -89,24 +86,23 @@ class TaskDetailPage extends ConsumerWidget {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
                       decoration: BoxDecoration(
-                        color: AppColors.bgElevated,
+                        color: cs.surfaceContainerHighest,
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text('Score: ${task.urgencyScore}/100',
                           style: TextStyle(color: urgencyColor, fontSize: 12, fontWeight: FontWeight.w600)),
                     ),
-                    if (task.isCrossNgo) ...[ 
+                    if (task.isCrossNgo) ...[
                       const SizedBox(width: 8),
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
                         decoration: BoxDecoration(
-                          color: AppColors.primary.withAlpha(20),
+                          color: cs.primaryContainer,
                           borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: AppColors.primary.withAlpha(60)),
                         ),
                         child: Text(
                           'via ${task.sourceNgoName ?? 'Partner NGO'}',
-                          style: const TextStyle(color: AppColors.primary, fontSize: 11, fontWeight: FontWeight.w600),
+                          style: TextStyle(color: cs.onPrimaryContainer, fontSize: 11, fontWeight: FontWeight.w600),
                         ),
                       ),
                     ],
@@ -128,12 +124,11 @@ class TaskDetailPage extends ConsumerWidget {
                 ),
                 const SizedBox(height: 12),
 
-                if (task.matchReason != null && task.matchReason!.isNotEmpty) ...[ 
+                if (task.matchReason != null && task.matchReason!.isNotEmpty) ...[
                   _InfoCard(
                     icon: Icons.auto_awesome,
                     label: 'Why you were matched',
                     content: task.matchReason!,
-                    contentColor: AppColors.primary,
                   ),
                   const SizedBox(height: 12),
                 ],
@@ -160,13 +155,7 @@ class TaskDetailPage extends ConsumerWidget {
                   height: 48,
                   child: FilledButton.icon(
                     icon: const Icon(Icons.electric_moped, size: 20),
-                    label: const Text('SevakAI Navigation (Zomato-style)', 
-                        style: TextStyle(fontWeight: FontWeight.w600)),
-                    style: FilledButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    ),
+                    label: const Text('SevakAI Navigation'),
                     onPressed: () {
                       final currentUser = ref.read(volunteerProfileProvider).value;
                       if (currentUser == null) return;
@@ -200,23 +189,21 @@ class TaskDetailPage extends ConsumerWidget {
                 ),
                 const SizedBox(height: 28),
 
-                if (task.status == 'ASSIGNED') ...[ 
+                if (task.status == 'ASSIGNED') ...[
                   Row(
                     children: [
                       Expanded(
                         child: OutlinedButton(
                           onPressed: controller.isLoading ? null : () async {
-                            // Decline: record rejection and rematch
                             final matchUseCase = ref.read(matchVolunteerUseCaseProvider);
                             await ref.read(taskControllerProvider.notifier).declineTask(task, matchUseCase);
                             if (!context.mounted) return;
                             context.pop();
                           },
                           style: OutlinedButton.styleFrom(
-                            foregroundColor: AppColors.error,
-                            side: BorderSide(color: AppColors.error.withAlpha(120)),
+                            foregroundColor: cs.error,
+                            side: BorderSide(color: cs.error.withAlpha(120)),
                             minimumSize: const Size(0, 52),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                           ),
                           child: const Text('Decline'),
                         ),
@@ -232,18 +219,14 @@ class TaskDetailPage extends ConsumerWidget {
                               ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                               : const Icon(Icons.play_arrow_rounded, size: 18),
                           label: const Text('Start Task'),
-                          style: FilledButton.styleFrom(
-                            backgroundColor: AppColors.accent,
-                            minimumSize: const Size(0, 52),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                          ),
+                          style: FilledButton.styleFrom(minimumSize: const Size(0, 52)),
                         ),
                       ),
                     ],
                   ),
                 ],
 
-                if (task.status == 'IN_PROGRESS') ...[ 
+                if (task.status == 'IN_PROGRESS') ...[
                   SizedBox(
                     width: double.infinity,
                     height: 52,
@@ -255,10 +238,7 @@ class TaskDetailPage extends ConsumerWidget {
                           ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                           : const Icon(Icons.check_circle_outline, size: 18),
                       label: const Text('Mark as Complete'),
-                      style: FilledButton.styleFrom(
-                        backgroundColor: AppColors.success,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      ),
+                      style: FilledButton.styleFrom(backgroundColor: SevakColors.success),
                     ),
                   ),
                 ],
@@ -280,26 +260,23 @@ class TaskDetailPage extends ConsumerWidget {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setModalState) => Container(
-          padding: EdgeInsets.fromLTRB(20, 20, 20, MediaQuery.of(context).viewInsets.bottom + 20),
-          decoration: const BoxDecoration(
-            color: AppColors.bgSurface,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-          ),
+      useSafeArea: true,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setModalState) => Padding(
+          padding: EdgeInsets.fromLTRB(20, 20, 20, MediaQuery.of(ctx).viewInsets.bottom + 20),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const Text('Great Work!', 
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold), 
-                textAlign: TextAlign.center
-              ),
+              Text('Great Work! 🎉',
+                style: Theme.of(ctx).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                textAlign: TextAlign.center),
               const SizedBox(height: 8),
-              const Text('Share a success photo and a quick note for the NGO.', textAlign: TextAlign.center, style: TextStyle(color: AppColors.textSecondary)),
+              Text('Share a success photo and a quick note for the NGO.',
+                textAlign: TextAlign.center,
+                style: Theme.of(ctx).textTheme.bodyMedium?.copyWith(
+                    color: Theme.of(ctx).colorScheme.onSurfaceVariant)),
               const SizedBox(height: 20),
-              
               if (successImageBytes != null)
                 ClipRRect(
                   borderRadius: BorderRadius.circular(12),
@@ -321,30 +298,23 @@ class TaskDetailPage extends ConsumerWidget {
               const SizedBox(height: 16),
               TextField(
                 controller: notesController,
-                decoration: InputDecoration(
+                decoration: const InputDecoration(
                   hintText: 'What was achieved? (e.g. delivered 5 kits)',
-                  fillColor: AppColors.bgBase,
-                  filled: true,
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
                 ),
                 maxLines: 2,
               ),
               const SizedBox(height: 20),
               FilledButton(
                 onPressed: () async {
-                  Navigator.pop(context); // Close dialog
-                  
+                  Navigator.pop(ctx);
                   final ai = ref.read(aiDatasourceProvider);
                   final cloudinary = ref.read(cloudinaryProvider);
-                  
                   List<int>? bytes;
                   String? imageUrl;
-                  
                   if (successImageBytes != null) {
                     bytes = await ImageCompressor.compress(successImageBytes!);
                     imageUrl = await cloudinary.uploadImage(bytes, 'success_${task.id}.jpg');
                   }
-                  
                   await ref.read(taskControllerProvider.notifier).completeTaskWithStory(
                     task: task,
                     completionNotes: notesController.text,
@@ -352,12 +322,12 @@ class TaskDetailPage extends ConsumerWidget {
                     successImageBytes: bytes,
                     afterImageUrl: imageUrl,
                   );
-                  
                   if (!context.mounted) return;
                   SnackbarUtils.showSuccess(context, 'Impact Story Generated! Task Completed 🎉');
-                  context.pop(); // Back to tasks
+                  context.pop();
                 },
-                style: FilledButton.styleFrom(backgroundColor: AppColors.success, minimumSize: const Size(0, 50)),
+                style: FilledButton.styleFrom(
+                    backgroundColor: SevakColors.success, minimumSize: const Size(0, 50)),
                 child: const Text('Generate Impact & Complete'),
               ),
             ],
@@ -372,40 +342,43 @@ class _InfoCard extends StatelessWidget {
   final IconData icon;
   final String label;
   final String content;
-  final Color contentColor;
 
   const _InfoCard({
     required this.icon,
     required this.label,
     required this.content,
-    this.contentColor = AppColors.textPrimary,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: AppColors.bgSurface,
+    final cs = Theme.of(context).colorScheme;
+    final tt = Theme.of(context).textTheme;
+    return Card(
+      color: cs.surfaceContainerLow,
+      elevation: 0,
+      shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.border),
+        side: BorderSide(color: cs.outlineVariant),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(icon, size: 14, color: AppColors.textSecondary),
-              const SizedBox(width: 6),
-              Text(label,
-                  style: const TextStyle(color: AppColors.textSecondary, fontSize: 11,
-                      fontWeight: FontWeight.w600, letterSpacing: 0.5)),
-            ],
-          ),
-          const SizedBox(height: 6),
-          Text(content, style: TextStyle(color: contentColor, fontSize: 14, height: 1.5)),
-        ],
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(icon, size: 14, color: cs.onSurfaceVariant),
+                const SizedBox(width: 6),
+                Text(label,
+                    style: tt.labelSmall?.copyWith(
+                        color: cs.onSurfaceVariant, letterSpacing: 0.5)),
+              ],
+            ),
+            const SizedBox(height: 6),
+            Text(content,
+                style: tt.bodyMedium?.copyWith(color: cs.onSurface, height: 1.5)),
+          ],
+        ),
       ),
     ).animate().fade().slideY(begin: 0.05, end: 0);
   }

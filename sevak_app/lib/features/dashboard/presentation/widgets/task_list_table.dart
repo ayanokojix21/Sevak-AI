@@ -5,8 +5,19 @@ import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/need_widgets.dart';
 import '../../../needs/domain/entities/need_entity.dart';
 
+// Need-type icon/color helpers (moved here since NeedTypeChip is now purely visual)
+IconData _needTypeIcon(String type) {
+  switch (type.toUpperCase()) {
+    case 'FOOD': return Icons.fastfood;
+    case 'MEDICAL': return Icons.medical_services;
+    case 'SHELTER': return Icons.home;
+    case 'CLOTHING': return Icons.checkroom;
+    case 'RESCUE': return Icons.emergency;
+    default: return Icons.help_outline;
+  }
+}
+
 /// Sortable table listing all needs with status badges.
-/// Tapping a row selects it in the map and detail panel.
 class TaskListTable extends StatefulWidget {
   final List<NeedEntity> needs;
   final NeedEntity? selectedNeed;
@@ -72,41 +83,43 @@ class _TaskListTableState extends State<TaskListTable> {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+
     if (widget.needs.isEmpty) {
-      return Container(
-        padding: const EdgeInsets.all(48),
-        decoration: BoxDecoration(
-          color: AppColors.bgSurface,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppColors.border),
+      return Card(
+        color: cs.surfaceContainerLow,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+          side: BorderSide(color: cs.outlineVariant),
         ),
-        child: const Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.inbox_rounded, size: 48, color: AppColors.textDisabled),
-              SizedBox(height: 12),
-              Text(
-                'No needs reported yet',
-                style: TextStyle(
-                  color: AppColors.textSecondary,
-                  fontSize: 16,
-                ),
-              ),
-            ],
+        child: Padding(
+          padding: const EdgeInsets.all(48),
+          child: Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.inbox_rounded, size: 48, color: cs.onSurfaceVariant),
+                const SizedBox(height: 12),
+                Text('No needs reported yet',
+                    style: Theme.of(context)
+                        .textTheme
+                        .bodyLarge
+                        ?.copyWith(color: cs.onSurfaceVariant)),
+              ],
+            ),
           ),
         ),
       );
     }
 
-    // Minimum width prevents column compression overflow on mobile
     const double minTableWidth = 520;
 
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.bgSurface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.border),
+    return Card(
+      color: cs.surfaceContainerLow,
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: cs.outlineVariant),
       ),
       clipBehavior: Clip.antiAlias,
       child: SingleChildScrollView(
@@ -125,10 +138,7 @@ class _TaskListTableState extends State<TaskListTable> {
               // Table header
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                decoration: const BoxDecoration(
-                  color: AppColors.bgElevated,
-                  border: Border(bottom: BorderSide(color: AppColors.border)),
-                ),
+                color: cs.surfaceContainerHighest,
                 child: Row(
                   children: [
                     _HeaderCell('Type', 'needType', flex: 2),
@@ -158,6 +168,7 @@ class _TaskListTableState extends State<TaskListTable> {
 
   Widget _HeaderCell(String label, String field,
       {int flex = 1, bool sortable = true}) {
+    final cs = Theme.of(context).colorScheme;
     final isActive = _sortField == field;
     return Expanded(
       flex: flex,
@@ -168,7 +179,7 @@ class _TaskListTableState extends State<TaskListTable> {
             Text(
               label,
               style: TextStyle(
-                color: isActive ? AppColors.primary : AppColors.textSecondary,
+                color: isActive ? cs.primary : cs.onSurfaceVariant,
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
                 letterSpacing: 0.5,
@@ -179,7 +190,7 @@ class _TaskListTableState extends State<TaskListTable> {
               Icon(
                 _sortAscending ? Icons.arrow_upward : Icons.arrow_downward,
                 size: 12,
-                color: AppColors.primary,
+                color: cs.primary,
               ),
             ],
           ],
@@ -194,25 +205,22 @@ class _NeedRow extends StatelessWidget {
   final bool isSelected;
   final VoidCallback onTap;
 
-  const _NeedRow({
-    required this.need,
-    required this.isSelected,
-    required this.onTap,
-  });
+  const _NeedRow({required this.need, required this.isSelected, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     final urgencyColor = AppTheme.urgencyColor(need.urgencyScore);
     final dateStr = DateFormat('d MMM, HH:mm').format(need.createdAt);
 
     return Material(
-      color: isSelected ? AppColors.primary.withAlpha(25) : Colors.transparent,
+      color: isSelected ? cs.primaryContainer.withAlpha(60) : Colors.transparent,
       child: InkWell(
         onTap: onTap,
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          decoration: const BoxDecoration(
-            border: Border(bottom: BorderSide(color: AppColors.border, width: 0.5)),
+          decoration: BoxDecoration(
+            border: Border(bottom: BorderSide(color: cs.outlineVariant, width: 0.5)),
           ),
           child: Row(
             children: [
@@ -222,17 +230,17 @@ class _NeedRow extends StatelessWidget {
                 child: Row(
                   children: [
                     Icon(
-                      NeedTypeChip.needTypeIcon(need.needType),
+                      _needTypeIcon(need.needType),
                       size: 16,
-                      color: NeedTypeChip.needTypeColor(need.needType),
+                      color: cs.primary,
                     ),
                     const SizedBox(width: 6),
                     Flexible(
                       child: Text(
                         need.needType,
-                        style: const TextStyle(
-                          fontSize: 13,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           fontWeight: FontWeight.w500,
+                          color: cs.onSurface,
                         ),
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -247,8 +255,7 @@ class _NeedRow extends StatelessWidget {
                 child: Row(
                   children: [
                     Container(
-                      width: 28,
-                      height: 28,
+                      width: 28, height: 28,
                       decoration: BoxDecoration(
                         color: urgencyColor.withAlpha(38),
                         borderRadius: BorderRadius.circular(6),
@@ -272,7 +279,7 @@ class _NeedRow extends StatelessWidget {
                 flex: 2,
                 child: Align(
                   alignment: Alignment.centerLeft,
-                  child: StatusBadge(status: need.status, compact: true),
+                  child: StatusBadge(status: need.status),
                 ),
               ),
 
@@ -281,10 +288,8 @@ class _NeedRow extends StatelessWidget {
                 flex: 3,
                 child: Text(
                   need.location,
-                  style: const TextStyle(
-                    color: AppColors.textSecondary,
-                    fontSize: 12,
-                  ),
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: cs.onSurfaceVariant),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -295,10 +300,8 @@ class _NeedRow extends StatelessWidget {
                 flex: 2,
                 child: Text(
                   dateStr,
-                  style: const TextStyle(
-                    color: AppColors.textSecondary,
-                    fontSize: 12,
-                  ),
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: cs.onSurfaceVariant),
                 ),
               ),
             ],
@@ -308,4 +311,3 @@ class _NeedRow extends StatelessWidget {
     );
   }
 }
-

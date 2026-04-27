@@ -1,8 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
-import 'package:flutter_animate/flutter_animate.dart';
+
 
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/snackbar_utils.dart';
@@ -79,31 +78,19 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
     });
 
     return Scaffold(
-      backgroundColor: AppColors.bgBase,
       appBar: _buildAppBar(showGlobal, coordinatorNgo?.name),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => context.push('/submit-community-report'),
-        backgroundColor: AppColors.error,
-        icon: const Icon(Icons.campaign, color: Colors.white),
-        label: const Text('Report Emergency', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-      ).animate(onPlay: (c) => c.repeat(reverse: true)).scale(begin: const Offset(1, 1), end: const Offset(1.05, 1.05), duration: 1.seconds),
       body: needsStream.when(
         data: (needs) => _buildBody(context, needs, selectedNeed, coordinatorNgo?.id),
-        loading: () => const Center(
-          child: CircularProgressIndicator(color: AppColors.primary),
-        ),
+        loading: () => const Center(child: CircularProgressIndicator()),
         error: (err, _) => Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.error_outline, size: 48, color: AppColors.error),
+              Icon(Icons.error_outline, size: 48, color: Theme.of(context).colorScheme.error),
               const SizedBox(height: 16),
-              Text(
-                'Failed to load needs',
-                style: Theme.of(context).textTheme.headlineMedium,
-              ),
+              Text('Failed to load needs', style: Theme.of(context).textTheme.headlineMedium),
               const SizedBox(height: 8),
-              Text(err.toString(), style: const TextStyle(color: AppColors.textSecondary)),
+              Text(err.toString(), style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
             ],
           ),
         ),
@@ -113,8 +100,6 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
 
   PreferredSizeWidget _buildAppBar(bool showGlobal, String? ngoName) {
     return AppBar(
-      backgroundColor: AppColors.bgBase,
-      elevation: 0,
       titleSpacing: 0,
       title: Padding(
         padding: const EdgeInsets.only(left: 4),
@@ -123,10 +108,11 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
             Container(
               padding: const EdgeInsets.all(6),
               decoration: BoxDecoration(
-                color: AppColors.primary.withAlpha(25),
+                color: Theme.of(context).colorScheme.primaryContainer,
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: const Icon(Icons.dashboard_rounded, color: AppColors.primary, size: 18),
+              child: Icon(Icons.dashboard_rounded,
+                  color: Theme.of(context).colorScheme.onPrimaryContainer, size: 18),
             ),
             const SizedBox(width: 8),
             Flexible(
@@ -134,21 +120,17 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Text(
-                    'Command Center',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
-                    overflow: TextOverflow.ellipsis,
-                  ),
+                  const Text('Command Center',
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                      overflow: TextOverflow.ellipsis),
                   if (ngoName != null)
-                    Text(
-                      ngoName,
-                      style: const TextStyle(
-                        fontSize: 11,
-                        color: AppColors.textSecondary,
-                        fontWeight: FontWeight.w400,
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                    ),
+                    Text(ngoName,
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          fontWeight: FontWeight.w400,
+                        ),
+                        overflow: TextOverflow.ellipsis),
                 ],
               ),
             ),
@@ -156,33 +138,23 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
         ),
       ),
       actions: [
-        // Global/NGO toggle
-        Container(
-          margin: const EdgeInsets.only(right: 8),
-          decoration: BoxDecoration(
-            color: AppColors.bgElevated,
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: AppColors.border),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _ToggleButton(
-                label: 'All',
-                icon: Icons.public,
-                isActive: showGlobal,
-                onTap: () => ref.read(showGlobalNeedsProvider.notifier).state = true,
-              ),
-              _ToggleButton(
-                label: 'NGO',
-                icon: Icons.business,
-                isActive: !showGlobal,
-                onTap: () => ref.read(showGlobalNeedsProvider.notifier).state = false,
-              ),
+        // M3 SegmentedButton toggle
+        Padding(
+          padding: const EdgeInsets.only(right: 12),
+          child: SegmentedButton<bool>(
+            segments: const [
+              ButtonSegment(value: true, label: Text('All'), icon: Icon(Icons.public, size: 16)),
+              ButtonSegment(value: false, label: Text('NGO'), icon: Icon(Icons.business, size: 16)),
             ],
+            selected: {showGlobal},
+            onSelectionChanged: (v) =>
+                ref.read(showGlobalNeedsProvider.notifier).state = v.first,
+            style: SegmentedButton.styleFrom(
+              minimumSize: const Size(0, 36),
+              padding: const EdgeInsets.symmetric(horizontal: 10),
+            ),
           ),
         ),
-        const SizedBox(width: 4),
       ],
     );
   }
@@ -216,7 +188,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
       child: Column(
         children: [
           // Stats row
-          StatCards(needs: needs),
+          _buildStatRow(needs),
           const SizedBox(height: 20),
 
           // Map + Detail panel row
@@ -278,7 +250,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
           child: Column(
             children: [
               // Stats
-              StatCards(needs: needs),
+              _buildStatRow(needs),
               const SizedBox(height: 16),
 
               // Map
@@ -320,37 +292,16 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.transparent,
+      useSafeArea: true,
       builder: (ctx) => DraggableScrollableSheet(
         initialChildSize: 0.7,
         minChildSize: 0.4,
         maxChildSize: 0.95,
-        builder: (_, scrollController) => Container(
-          decoration: const BoxDecoration(
-            color: AppColors.bgSurface,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-          ),
-          child: Column(
-            children: [
-              // Drag handle
-              Container(
-                width: 40,
-                height: 4,
-                margin: const EdgeInsets.only(top: 12, bottom: 8),
-                decoration: BoxDecoration(
-                  color: AppColors.textDisabled,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              Expanded(
-                child: _buildDetailPanel(
-                  need,
-                  coordinatorNgoId,
-                  onClose: () => Navigator.pop(ctx),
-                ),
-              ),
-            ],
-          ),
+        expand: false,
+        builder: (_, scrollController) => _buildDetailPanel(
+          need,
+          coordinatorNgoId,
+          onClose: () => Navigator.pop(ctx),
         ),
       ),
     );
@@ -414,53 +365,25 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
       },
     );
   }
-}
 
-
-class _ToggleButton extends StatelessWidget {
-  final String label;
-  final IconData icon;
-  final bool isActive;
-  final VoidCallback onTap;
-
-  const _ToggleButton({
-    required this.label,
-    required this.icon,
-    required this.isActive,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-        decoration: BoxDecoration(
-          color: isActive ? AppColors.primary.withAlpha(38) : Colors.transparent,
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              icon,
-              size: 16,
-              color: isActive ? AppColors.primary : AppColors.textDisabled,
-            ),
-            const SizedBox(width: 6),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
-                color: isActive ? AppColors.primary : AppColors.textDisabled,
-              ),
-            ),
-          ],
-        ),
-      ),
+  Widget _buildStatRow(List<NeedEntity> needs) {
+    final cs = Theme.of(context).colorScheme;
+    final total      = needs.length;
+    final critical   = needs.where((n) => (n.urgencyScore) >= 80).length;
+    final assigned   = needs.where((n) => n.status == 'ASSIGNED' || n.status == 'IN_PROGRESS').length;
+    final completed  = needs.where((n) => n.status == 'COMPLETED').length;
+    return Row(
+      children: [
+        Expanded(child: StatCards(title: 'Total', value: '$total', icon: Icons.list_alt, accentColor: cs.primary)),
+        const SizedBox(width: 8),
+        Expanded(child: StatCards(title: 'Critical', value: '$critical', icon: Icons.warning_amber_rounded, accentColor: cs.error)),
+        const SizedBox(width: 8),
+        Expanded(child: StatCards(title: 'Active', value: '$assigned', icon: Icons.assignment_ind, accentColor: cs.tertiary)),
+        const SizedBox(width: 8),
+        Expanded(child: StatCards(title: 'Done', value: '$completed', icon: Icons.check_circle_outline, accentColor: SevakColors.success)),
+      ],
     );
   }
 }
+
+// _ToggleButton removed — replaced by SegmentedButton in _buildAppBar.
