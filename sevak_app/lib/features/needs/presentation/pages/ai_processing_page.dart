@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/snackbar_utils.dart';
 import '../../../../providers/need_providers.dart';
 
@@ -34,92 +33,85 @@ class _AiProcessingPageState extends ConsumerState<AiProcessingPage>
 
   @override
   Widget build(BuildContext context) {
-    // Listen for result changes — navigate or show error
+    final cs = Theme.of(context).colorScheme;
+    final tt = Theme.of(context).textTheme;
+
     ref.listen(needControllerProvider, (previous, next) {
       if (!mounted) return;
-
       if (next is AsyncData && next.value != null) {
         context.pushReplacement('/need-confirmation');
       } else if (next is AsyncError) {
         final errorMsg = SnackbarUtils.messageFrom(next.error);
-        debugPrint('AI Processing error: $errorMsg');
         SnackbarUtils.showError(context, 'AI Processing failed: $errorMsg');
         context.pop();
       }
     });
 
     return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              AppColors.bgBase,
-              Color(0xFF0F1A2E),
-              AppColors.bgBase,
-            ],
-          ),
-        ),
-        child: Center(
+      backgroundColor: cs.surface,
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(32),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // Animated pulsing circle
+              // Animated pulsing icon in M3 primaryContainer
               AnimatedBuilder(
                 animation: _pulseController,
                 builder: (context, child) {
-                  final scale = 1.0 + (_pulseController.value * 0.15);
-                  final opacity = 0.4 + (_pulseController.value * 0.6);
+                  final scale = 1.0 + (_pulseController.value * 0.12);
+                  final alpha = (80 + (_pulseController.value * 100)).toInt();
                   return Transform.scale(
                     scale: scale,
                     child: Container(
-                      width: 100,
-                      height: 100,
+                      width: 110,
+                      height: 110,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: AppColors.primary.withAlpha((opacity * 60).toInt()),
+                        color: cs.primaryContainer.withAlpha(alpha),
                         border: Border.all(
-                          color: AppColors.primary.withAlpha((opacity * 255).toInt()),
+                          color: cs.primary.withAlpha(180),
                           width: 2,
                         ),
                       ),
-                      child: const Icon(
-                        Icons.auto_awesome,
-                        size: 40,
-                        color: AppColors.primary,
+                      child: Icon(
+                        Icons.auto_awesome_rounded,
+                        size: 48,
+                        color: cs.onPrimaryContainer,
                       ),
                     ),
                   );
                 },
               ),
               const SizedBox(height: 40),
-              const Text(
+              Text(
                 'SevakAI is analyzing...',
-                style: TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.textPrimary,
-                ),
+                style: tt.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+                textAlign: TextAlign.center,
               ),
               const SizedBox(height: 12),
-              const Text(
+              Text(
                 'Extracting emergency type, urgency score,\nand location data from your report.',
                 textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: AppColors.textSecondary,
-                  fontSize: 14,
+                style: tt.bodyMedium?.copyWith(
+                  color: cs.onSurfaceVariant,
                   height: 1.5,
                 ),
               ),
               const SizedBox(height: 40),
-              const SizedBox(
+              SizedBox(
                 width: 200,
                 child: LinearProgressIndicator(
-                  backgroundColor: AppColors.bgElevated,
-                  color: AppColors.primary,
-                  minHeight: 3,
+                  backgroundColor: cs.surfaceContainerHighest,
+                  color: cs.primary,
+                  minHeight: 4,
+                  borderRadius: BorderRadius.circular(2),
                 ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Powered by Google Gemini',
+                style: tt.labelSmall?.copyWith(color: cs.onSurfaceVariant),
               ),
             ],
           ),

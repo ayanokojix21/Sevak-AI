@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import '../../../../core/constants/role_definitions.dart';
 import '../../../../core/theme/app_theme.dart';
@@ -13,8 +14,8 @@ import '../../../../providers/ngo_providers.dart';
 import '../../../../providers/task_providers.dart';
 import '../../../../providers/community_report_providers.dart';
 import '../../../location/data/location_service.dart';
+import '../../../../app.dart';
 
-/// Role-aware home page — renders role-specific content sections.
 class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
 
@@ -29,44 +30,32 @@ class _HomePageState extends ConsumerState<HomePage> {
   @override
   void initState() {
     super.initState();
-    // 1. Explicitly request notification permissions
     TaskNotificationService.requestPermissions();
-
-    // 2. Start Firestore listeners and location setup
     final uid = ref.read(authStateProvider).value?.uid;
     if (uid != null) {
       TaskNotificationService.startTaskListener(uid);
       _initRoleBasedListeners();
-      // Try to get location and show GPS banner if needed
       _checkAndUpdateLocation(uid);
     }
   }
 
   Future<void> _checkAndUpdateLocation(String uid) async {
-    // Check if permission is granted
     final hasPermission = await LocationService.hasLocationPermission();
     if (!hasPermission) {
       final result = await LocationService.requestLocationPermission();
-      if (result == LocationPermission.denied ||
-          result == LocationPermission.deniedForever) {
+      if (result == LocationPermission.denied || result == LocationPermission.deniedForever) {
         if (mounted) setState(() => _locationGranted = false);
         return;
       }
     }
-
-    // Check if GPS hardware is on
     final serviceOn = await LocationService.isLocationServiceEnabled();
     if (!serviceOn) {
       if (mounted) setState(() => _gpsEnabled = false);
       return;
     }
-
     if (mounted) setState(() { _gpsEnabled = true; _locationGranted = true; });
-
-    // Update location in Firestore
     final success = await LocationService().updateVolunteerLocation(uid);
     if (!success) {
-      // GPS might have been disabled mid-flight
       final stillOn = await LocationService.isLocationServiceEnabled();
       if (mounted && !stillOn) setState(() => _gpsEnabled = false);
     }
@@ -75,54 +64,76 @@ class _HomePageState extends ConsumerState<HomePage> {
   Future<void> _initRoleBasedListeners() async {
     final profile = await ref.read(volunteerProfileProvider.future);
     if (profile != null &&
-        (profile.platformRole == 'CO' ||
-         profile.platformRole == 'NA' ||
-         profile.platformRole == 'coordinator' ||
-         profile.platformRole == 'ngo_admin')) {
+        (profile.platformRole == 'CO' || profile.platformRole == 'NA' ||
+         profile.platformRole == 'coordinator' || profile.platformRole == 'ngo_admin')) {
       TaskNotificationService.startCoordinatorListener(profile.primaryNgoId);
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final tt = Theme.of(context).textTheme;
+    final themeMode = ref.watch(themeModeProvider);
+
     final profileAsync = ref.watch(volunteerProfileProvider);
     return profileAsync.when(
       data: (profile) {
         if (profile == null) {
           return const Scaffold(body: Center(child: CircularProgressIndicator()));
         }
-
         final role = PlatformRoleX.fromCode(profile.platformRole);
 
         return Scaffold(
-          // ── Navigation Drawer ─────────────────────────────────────────────
           drawer: _AppDrawer(profile: profile, role: role),
-
           appBar: AppBar(
             title: Row(
               children: [
-                Image.asset('assets/images/logo_sevak.png', height: 28),
+                Container(
+                  width: 28, height: 28,
+                  decoration: BoxDecoration(
+                    color: cs.primaryContainer,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(4),
+                    child: Image.asset('assets/images/logo_sevak.png', fit: BoxFit.contain),
+                  ),
+                ),
                 const SizedBox(width: 10),
-                const Text('SevakAI'),
+                Text('SevakAI', style: tt.titleLarge),
               ],
             ),
             actions: [
-              // Role badge
+              // Theme toggle
+              IconButton(
+                icon: Icon(
+                  themeMode == ThemeMode.dark ? Icons.light_mode_outlined : Icons.dark_mode_outlined,
+                ),
+                tooltip: themeMode == ThemeMode.dark ? 'Switch to Light' : 'Switch to Dark',
+                onPressed: () {
+                  ref.read(themeModeProvider.notifier).state =
+                      themeMode == ThemeMode.dark ? ThemeMode.light : ThemeMode.dark;
+                },
+              ),
+              // Role chip
               Container(
                 margin: const EdgeInsets.only(right: 8),
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                 decoration: BoxDecoration(
-                  color: role.color.withAlpha(30),
+                  color: cs.secondaryContainer,
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: role.color.withAlpha(80)),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(role.icon, size: 14, color: role.color),
+                    Icon(role.icon, size: 14, color: cs.onSecondaryContainer),
                     const SizedBox(width: 4),
                     Text(role.label,
-                        style: TextStyle(color: role.color, fontSize: 11, fontWeight: FontWeight.w600)),
+                        style: tt.labelSmall?.copyWith(
+                          color: cs.onSecondaryContainer,
+                          fontWeight: FontWeight.w600,
+                        )),
                   ],
                 ),
               ),
@@ -136,283 +147,199 @@ class _HomePageState extends ConsumerState<HomePage> {
                 // Welcome
                 Text(
                   'Welcome, ${profile.name.isNotEmpty ? profile.name : 'User'} 👋',
-                  style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                  style: tt.headlineSmall?.copyWith(fontWeight: FontWeight.w700),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   _subtitleForRole(role, profile.primaryNgoId),
-                  style: const TextStyle(color: AppColors.textSecondary, fontSize: 14),
+                  style: tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant),
                 ),
                 const SizedBox(height: 24),
 
-                // Location/GPS Warning Banner
-                if (!_gpsEnabled || !_locationGranted)
-                  Container(
-                    margin: const EdgeInsets.only(bottom: 24),
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: AppColors.error.withAlpha(20),
-                      border: Border.all(color: AppColors.error),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            const Icon(Icons.location_off, color: AppColors.error),
+                // GPS Warning
+                if (!_gpsEnabled || !_locationGranted) ...[
+                  Card(
+                    color: cs.errorContainer,
+                    margin: const EdgeInsets.only(bottom: 16),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(children: [
+                            Icon(Icons.location_off, color: cs.onErrorContainer),
                             const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                !_locationGranted
-                                    ? 'Location permission denied'
-                                    : 'GPS is turned off',
-                                style: const TextStyle(
-                                  color: AppColors.error,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 16,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          !_locationGranted
-                              ? 'SevakAI needs location permission to match you with emergencies.'
-                              : 'SevakAI needs GPS to match you with nearby emergencies. Please turn it on.',
-                          style: const TextStyle(color: AppColors.textPrimary),
-                        ),
-                        const SizedBox(height: 12),
-                        SizedBox(
-                          width: double.infinity,
-                          child: FilledButton.icon(
-                            onPressed: () async {
-                              if (!_locationGranted) {
-                                await LocationService.openAppPermissionSettings();
-                              } else {
-                                await LocationService.openDeviceLocationSettings();
-                              }
-                            },
-                            icon: const Icon(Icons.settings),
-                            label: Text(!_locationGranted ? 'Open App Settings' : 'Turn On GPS'),
-                            style: FilledButton.styleFrom(
-                              backgroundColor: AppColors.error,
-                              foregroundColor: Colors.white,
-                            ),
+                            Expanded(child: Text(
+                              !_locationGranted ? 'Location permission denied' : 'GPS is turned off',
+                              style: tt.titleSmall?.copyWith(color: cs.onErrorContainer, fontWeight: FontWeight.w600),
+                            )),
+                          ]),
+                          const SizedBox(height: 8),
+                          Text(
+                            !_locationGranted
+                                ? 'SevakAI needs location permission to match you with emergencies.'
+                                : 'SevakAI needs GPS to match you with nearby emergencies.',
+                            style: tt.bodySmall?.copyWith(color: cs.onErrorContainer),
                           ),
-                        ),
-                      ],
+                          const SizedBox(height: 12),
+                          FilledButton.icon(
+                            onPressed: () async {
+                              if (!_locationGranted) await LocationService.openAppPermissionSettings();
+                              else await LocationService.openDeviceLocationSettings();
+                            },
+                            style: FilledButton.styleFrom(
+                              backgroundColor: cs.error,
+                              foregroundColor: cs.onError,
+                            ),
+                            icon: const Icon(Icons.settings, size: 16),
+                            label: Text(!_locationGranted ? 'Open Settings' : 'Turn On GPS'),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
+                ],
 
-                // SA SECTION — Super Admin Panel
+                // SA SECTION
                 if (role == PlatformRole.SA) ...[
-                  _SectionHeader(icon: Icons.admin_panel_settings, title: 'Super Admin', color: role.color),
+                  _SectionHeader(icon: Icons.admin_panel_settings, title: 'Super Admin', cs: cs, tt: tt),
                   const SizedBox(height: 12),
-                  _ActionCard(
-                    icon: Icons.shield_outlined,
-                    title: 'Super Admin Panel',
-                    subtitle: 'Approve NGOs, view analytics, manage platform',
-                    color: PlatformRole.SA.color,
-                    onTap: () => context.push('/super-admin'),
-                  ),
-                  const SizedBox(height: 12),
-                  _ActionCard(
-                    icon: Icons.map_outlined,
-                    title: 'Open Dashboard',
-                    subtitle: 'View all needs across the platform',
-                    color: PlatformRole.CO.color,
-                    onTap: () => context.push('/dashboard'),
-                  ),
+                  _ActionCard(icon: Icons.shield_outlined, title: 'Super Admin Panel',
+                    subtitle: 'Approve NGOs, view analytics, manage platform', onTap: () => context.push('/super-admin')),
+                  const SizedBox(height: 8),
+                  _ActionCard(icon: Icons.map_outlined, title: 'Open Dashboard',
+                    subtitle: 'View all needs across the platform', onTap: () => context.push('/dashboard')),
                   const SizedBox(height: 24),
                 ],
 
-                // NA SECTION — NGO Admin
+                // NA SECTION
                 if (role == PlatformRole.NA) ...[
-                  _SectionHeader(icon: Icons.business, title: 'NGO Admin', color: role.color),
+                  _SectionHeader(icon: Icons.business, title: 'NGO Admin', cs: cs, tt: tt),
                   const SizedBox(height: 12),
                   if (profile.primaryNgoId.isNotEmpty) ...[
-                    _ActionCard(
-                      icon: Icons.business_center,
-                      title: 'Manage Your NGO',
+                    _ActionCard(icon: Icons.business_center, title: 'Manage Your NGO',
                       subtitle: 'Staff, invites, join requests',
-                      color: PlatformRole.NA.color,
-                      onTap: () => context.push('/ngo-admin/${profile.primaryNgoId}'),
-                    ),
+                      onTap: () => context.push('/ngo-admin/${profile.primaryNgoId}')),
                     Consumer(builder: (context, ref, _) {
-                      final requestsAsync = ref.watch(
-                          pendingJoinRequestsProvider(profile.primaryNgoId));
-                      return requestsAsync.when(
-                        data: (requests) {
-                          if (requests.isEmpty) return const SizedBox.shrink();
-                          return Padding(
-                            padding: const EdgeInsets.only(top: 8),
-                            child: _InfoBanner(
-                              icon: Icons.person_add,
-                              text: '${requests.length} pending join request${requests.length == 1 ? '' : 's'}',
-                              color: AppColors.warning,
-                              onTap: () => context.push('/ngo-admin/${profile.primaryNgoId}'),
-                            ),
-                          );
-                        },
-                        loading: () => const SizedBox.shrink(),
-                        error: (_, __) => const SizedBox.shrink(),
+                      final requestsAsync = ref.watch(pendingJoinRequestsProvider(profile.primaryNgoId));
+                      return requestsAsync.maybeWhen(
+                        data: (requests) => requests.isEmpty ? const SizedBox.shrink() : Padding(
+                          padding: const EdgeInsets.only(top: 8),
+                          child: _InfoBanner(icon: Icons.person_add,
+                            text: '${requests.length} pending join request${requests.length == 1 ? '' : 's'}',
+                            color: SevakColors.warning,
+                            onTap: () => context.push('/ngo-admin/${profile.primaryNgoId}')),
+                        ),
+                        orElse: () => const SizedBox.shrink(),
                       );
                     }),
-                    const SizedBox(height: 12),
-                    _ActionCard(
-                      icon: Icons.map_outlined,
-                      title: 'Open Dashboard',
-                      subtitle: 'View needs, map, and manage tasks',
-                      color: PlatformRole.CO.color,
-                      onTap: () => context.push('/dashboard'),
-                    ),
-                  ] else ...[
-                    _InfoBanner(
-                      icon: Icons.info_outline,
-                      text: 'Your NGO is pending approval or not linked yet.',
-                      color: AppColors.warning,
-                    ),
-                  ],
+                    const SizedBox(height: 8),
+                    _ActionCard(icon: Icons.map_outlined, title: 'Open Dashboard',
+                      subtitle: 'View needs, map, and manage tasks', onTap: () => context.push('/dashboard')),
+                  ] else
+                    _InfoBanner(icon: Icons.info_outline, text: 'Your NGO is pending approval or not linked yet.', color: SevakColors.warning),
                   const SizedBox(height: 24),
                 ],
 
-                // CO SECTION — Coordinator Dashboard
+                // CO SECTION
                 if (role == PlatformRole.CO) ...[
-                  _SectionHeader(icon: Icons.dashboard_rounded, title: 'Coordinator Dashboard', color: PlatformRole.CO.color),
+                  _SectionHeader(icon: Icons.dashboard_rounded, title: 'Coordinator Dashboard', cs: cs, tt: tt),
                   const SizedBox(height: 12),
-                  _ActionCard(
-                    icon: Icons.map_outlined,
-                    title: 'Open Dashboard',
-                    subtitle: 'View needs, map, and manage tasks',
-                    color: PlatformRole.CO.color,
-                    onTap: () => context.push('/dashboard'),
-                  ),
+                  _ActionCard(icon: Icons.map_outlined, title: 'Open Dashboard',
+                    subtitle: 'View needs, map, and manage tasks', onTap: () => context.push('/dashboard')),
                   const SizedBox(height: 24),
                 ],
 
-                // VL SECTION — Volunteer controls
+                // VL SECTION
                 if (role == PlatformRole.VL) ...[
-                  _SectionHeader(icon: Icons.volunteer_activism, title: 'Volunteer', color: PlatformRole.VL.color),
+                  _SectionHeader(icon: Icons.volunteer_activism, title: 'Volunteer', cs: cs, tt: tt),
                   const SizedBox(height: 12),
-                  if (profile.primaryNgoId.isNotEmpty)
-                    _InfoBanner(
-                      icon: Icons.badge,
-                      text: 'Active member of an NGO',
-                      color: PlatformRole.VL.color,
-                    )
-                  else
-                    _InfoBanner(
-                      icon: Icons.info_outline,
-                      text: 'Join an NGO to start receiving tasks',
-                      color: AppColors.warning,
-                    ),
+                  profile.primaryNgoId.isNotEmpty
+                    ? _InfoBanner(icon: Icons.badge, text: 'Active member of an NGO', color: cs.primary)
+                    : _InfoBanner(icon: Icons.info_outline, text: 'Join an NGO to start receiving tasks', color: SevakColors.warning),
                   const SizedBox(height: 12),
-
-                  // My Tasks card with real-time badge count
                   Consumer(builder: (context, ref, _) {
                     final tasksAsync = ref.watch(myTasksStreamProvider);
                     final count = tasksAsync.maybeWhen(data: (t) => t.length, orElse: () => 0);
                     return _ActionCard(
                       icon: Icons.task_alt,
                       title: 'My Tasks${count > 0 ? " ($count)" : ""}',
-                      subtitle: count > 0
-                          ? '$count active task${count == 1 ? "" : "s"} assigned to you'
-                          : 'No active tasks right now',
-                      color: PlatformRole.VL.color,
+                      subtitle: count > 0 ? '$count active task${count == 1 ? "" : "s"} assigned' : 'No active tasks right now',
                       onTap: () => context.push('/my-tasks'),
                     );
                   }),
                   const SizedBox(height: 12),
-
-                  // Availability toggle
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: AppColors.bgSurface,
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: AppColors.border),
+                  // Availability toggle — M3 Card style
+                  Card(
+                    color: cs.surfaceContainerLow,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      side: BorderSide(color: cs.outlineVariant),
                     ),
-                    child: Row(
-                      children: [
-                        const Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text('Available for tasks',
-                                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
-                              SizedBox(height: 2),
-                              Text('Toggle your availability for partner NGO tasks',
-                                  style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
-                            ],
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('Available for tasks', style: tt.titleSmall?.copyWith(fontWeight: FontWeight.w600)),
+                                Text('Toggle availability for partner NGO tasks',
+                                    style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant)),
+                              ],
+                            ),
                           ),
-                        ),
-                        Switch(
-                          value: profile.isAvailable,
-                          activeTrackColor: AppColors.accent.withAlpha(100),
-                          activeThumbColor: AppColors.accent,
-                          onChanged: (val) {
-                            ref.read(userRepositoryProvider).updateCrossNgoConsent(profile.uid, val);
-                          },
-                        ),
-                      ],
+                          Switch(
+                            value: profile.isAvailable,
+                            onChanged: (val) {
+                              ref.read(userRepositoryProvider).updateCrossNgoConsent(profile.uid, val);
+                            },
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                   const SizedBox(height: 24),
                 ],
 
-                // COMMUNITY ACTIONS (everyone can report needs)
-                _SectionHeader(icon: Icons.campaign, title: 'Community Actions', color: AppColors.accent),
+                // COMMUNITY ACTIONS
+                _SectionHeader(icon: Icons.campaign, title: 'Community Actions', cs: cs, tt: tt),
                 const SizedBox(height: 12),
-                _ActionCard(
-                  icon: Icons.add_circle_outline,
-                  title: 'Report a Need',
-                  subtitle: 'Submit a new community need for AI triage',
-                  color: AppColors.accent,
-                  onTap: () => context.push('/submit-community-report'),
-                ),
+                _ActionCard(icon: Icons.add_circle_outline, title: 'Report a Need',
+                  subtitle: 'Submit a community need for AI triage',
+                  onTap: () => context.push('/submit-need')),
                 const SizedBox(height: 12),
 
-                // DISCOVER NGOs — CU and VL only
+                // CU + VL sections
                 if (role == PlatformRole.CU || role == PlatformRole.VL) ...[
                   if (role == PlatformRole.CU) ...[
-                    _SectionHeader(icon: Icons.history, title: 'My Emergency Reports', color: AppColors.primary),
+                    _SectionHeader(icon: Icons.history, title: 'My Emergency Reports', cs: cs, tt: tt),
                     const SizedBox(height: 12),
                     Consumer(builder: (context, ref, _) {
                       final reportsAsync = ref.watch(myCommunityReportsProvider);
-                      return reportsAsync.when(
-                        data: (reports) {
-                          if (reports.isEmpty) return const SizedBox.shrink();
-                          return Column(
-                            children: reports.take(2).map((report) => _InfoBanner(
+                      return reportsAsync.maybeWhen(
+                        data: (reports) => reports.isEmpty ? const SizedBox.shrink() : Column(
+                          children: reports.take(2).map((report) => Padding(
+                            padding: const EdgeInsets.only(bottom: 8),
+                            child: _InfoBanner(
                               icon: Icons.assignment_outlined,
                               text: '${report.needType}: ${report.status}',
-                              color: report.status == 'PENDING_APPROVAL' ? AppColors.warning : AppColors.success,
+                              color: report.status == 'PENDING_APPROVAL' ? SevakColors.warning : SevakColors.success,
                               onTap: () => context.push('/cu-dashboard'),
-                            )).toList(),
-                          );
-                        },
-                        loading: () => const SizedBox.shrink(),
-                        error: (_, __) => const SizedBox.shrink(),
+                            ),
+                          )).toList(),
+                        ),
+                        orElse: () => const SizedBox.shrink(),
                       );
                     }),
                     const SizedBox(height: 16),
                   ],
-                  _ActionCard(
-                    icon: Icons.explore,
-                    title: 'Discover NGOs',
+                  _ActionCard(icon: Icons.explore, title: 'Discover NGOs',
                     subtitle: 'Browse and request to join organizations',
-                    color: AppColors.primary,
-                    onTap: () => context.push('/discover-ngos'),
-                  ),
+                    onTap: () => context.push('/discover-ngos')),
                   const SizedBox(height: 12),
-                ],
-
-                // INVITE CODE — CU and VL only
-                if (role == PlatformRole.CU || role == PlatformRole.VL) ...[
-                  const SizedBox(height: 12),
-                  _SectionHeader(icon: Icons.vpn_key, title: 'Have an Invite Code?', color: AppColors.textSecondary),
+                  _SectionHeader(icon: Icons.vpn_key, title: 'Have an Invite Code?', cs: cs, tt: tt),
                   const SizedBox(height: 12),
                   _InviteCodeSection(),
                 ],
@@ -424,44 +351,40 @@ class _HomePageState extends ConsumerState<HomePage> {
         );
       },
       loading: () => const Scaffold(body: Center(child: CircularProgressIndicator())),
-      error: (e, _) => Scaffold(body: Center(child: Text('Error loading profile: $e'))),
+      error: (e, _) => Scaffold(body: Center(child: Text('Error: $e'))),
     );
   }
 
   String _subtitleForRole(PlatformRole role, String ngoId) {
     switch (role) {
-      case PlatformRole.SA:
-        return 'Platform Super Administrator';
-      case PlatformRole.NA:
-        return 'NGO Administrator';
-      case PlatformRole.CO:
-        return 'Coordinator — Managing needs & tasks';
-      case PlatformRole.VL:
-        return ngoId.isNotEmpty ? 'Active Volunteer' : 'Volunteer — Join an NGO to get started';
-      case PlatformRole.CU:
-        return 'Community User — Report needs & join NGOs';
+      case PlatformRole.SA: return 'Platform Super Administrator';
+      case PlatformRole.NA: return 'NGO Administrator';
+      case PlatformRole.CO: return 'Coordinator — Managing needs & tasks';
+      case PlatformRole.VL: return ngoId.isNotEmpty ? 'Active Volunteer' : 'Volunteer — Join an NGO to get started';
+      case PlatformRole.CU: return 'Community User — Report needs & join NGOs';
     }
   }
 }
 
-
+// ── Section Header ────────────────────────────────────────────────────────────
 class _SectionHeader extends StatelessWidget {
   final IconData icon;
   final String title;
-  final Color color;
+  final ColorScheme cs;
+  final TextTheme tt;
 
-  const _SectionHeader({required this.icon, required this.title, required this.color});
+  const _SectionHeader({required this.icon, required this.title, required this.cs, required this.tt});
 
   @override
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Icon(icon, size: 16, color: color),
-        const SizedBox(width: 6),
+        Icon(icon, size: 16, color: cs.primary),
+        const SizedBox(width: 8),
         Text(
           title.toUpperCase(),
-          style: TextStyle(
-            color: color,
+          style: GoogleFonts.roboto(
+            color: cs.primary,
             fontSize: 11,
             fontWeight: FontWeight.w700,
             letterSpacing: 1.2,
@@ -472,58 +395,58 @@ class _SectionHeader extends StatelessWidget {
   }
 }
 
+// ── Action Card — M3 Card.filled with InkWell ─────────────────────────────────
 class _ActionCard extends StatelessWidget {
   final IconData icon;
   final String title;
   final String subtitle;
-  final Color color;
   final VoidCallback onTap;
 
   const _ActionCard({
     required this.icon,
     required this.title,
     required this.subtitle,
-    required this.color,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: AppColors.bgSurface,
-      borderRadius: BorderRadius.circular(14),
+    final cs = Theme.of(context).colorScheme;
+    final tt = Theme.of(context).textTheme;
+    return Card(
+      color: cs.surfaceContainerLow,
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: cs.outlineVariant),
+      ),
+      clipBehavior: Clip.antiAlias,
       child: InkWell(
-        borderRadius: BorderRadius.circular(14),
         onTap: onTap,
-        child: Ink(
+        child: Padding(
           padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: AppColors.border),
-          ),
           child: Row(
             children: [
               Container(
-                width: 44,
-                height: 44,
+                width: 44, height: 44,
                 decoration: BoxDecoration(
-                  color: color.withAlpha(25),
+                  color: cs.primaryContainer,
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Icon(icon, color: color, size: 22),
+                child: Icon(icon, color: cs.onPrimaryContainer, size: 22),
               ),
               const SizedBox(width: 14),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(title, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
+                    Text(title, style: tt.titleSmall?.copyWith(fontWeight: FontWeight.w600)),
                     const SizedBox(height: 2),
-                    Text(subtitle, style: const TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+                    Text(subtitle, style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant)),
                   ],
                 ),
               ),
-              Icon(Icons.chevron_right, color: color.withAlpha(120)),
+              Icon(Icons.chevron_right, color: cs.onSurfaceVariant),
             ],
           ),
         ),
@@ -532,6 +455,7 @@ class _ActionCard extends StatelessWidget {
   }
 }
 
+// ── Info Banner ───────────────────────────────────────────────────────────────
 class _InfoBanner extends StatelessWidget {
   final IconData icon;
   final String text;
@@ -542,20 +466,21 @@ class _InfoBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tt = Theme.of(context).textTheme;
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: BoxDecoration(
-          color: color.withAlpha(15),
+          color: color.withAlpha(20),
           borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: color.withAlpha(50)),
+          border: Border.all(color: color.withAlpha(60)),
         ),
         child: Row(
           children: [
             Icon(icon, size: 16, color: color),
-            const SizedBox(width: 8),
-            Expanded(child: Text(text, style: TextStyle(color: color, fontSize: 13, fontWeight: FontWeight.w500))),
+            const SizedBox(width: 10),
+            Expanded(child: Text(text, style: tt.bodySmall?.copyWith(color: color, fontWeight: FontWeight.w500))),
             if (onTap != null) Icon(Icons.chevron_right, size: 16, color: color),
           ],
         ),
@@ -564,6 +489,7 @@ class _InfoBanner extends StatelessWidget {
   }
 }
 
+// ── Invite Code Section ───────────────────────────────────────────────────────
 class _InviteCodeSection extends ConsumerStatefulWidget {
   @override
   ConsumerState<_InviteCodeSection> createState() => _InviteCodeSectionState();
@@ -574,24 +500,17 @@ class _InviteCodeSectionState extends ConsumerState<_InviteCodeSection> {
   bool _isRedeeming = false;
 
   @override
-  void dispose() {
-    _codeController.dispose();
-    super.dispose();
-  }
+  void dispose() { _codeController.dispose(); super.dispose(); }
 
   Future<void> _redeemCode() async {
     final code = _codeController.text.trim();
     if (code.isEmpty) return;
-
     setState(() => _isRedeeming = true);
     try {
       await ref.read(authControllerProvider.notifier).consumeInviteCode(code);
-      
       if (!mounted) return;
       _codeController.clear();
       SnackbarUtils.showSuccess(context, 'Invite code redeemed successfully!');
-      
-      // Force refresh profile to check if skills are filled
       final profile = ref.read(volunteerProfileProvider).value;
       if (profile != null && profile.skills.isEmpty) {
         if (mounted) context.go('/profile-setup');
@@ -611,36 +530,22 @@ class _InviteCodeSectionState extends ConsumerState<_InviteCodeSection> {
           child: TextField(
             controller: _codeController,
             textCapitalization: TextCapitalization.characters,
-            decoration: const InputDecoration(
-              hintText: 'Enter code...',
-              isDense: true,
-              contentPadding: EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-            ),
+            decoration: const InputDecoration(hintText: 'Enter invite code…'),
           ),
         ),
         const SizedBox(width: 10),
-        SizedBox(
-          height: 48,
-          child: FilledButton(
-            onPressed: _isRedeeming ? null : _redeemCode,
-            style: FilledButton.styleFrom(
-              backgroundColor: AppColors.accent,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            ),
-            child: _isRedeeming
-                ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                : const Text('Redeem', style: TextStyle(color: AppColors.bgBase, fontWeight: FontWeight.w600)),
-          ),
+        FilledButton(
+          onPressed: _isRedeeming ? null : _redeemCode,
+          child: _isRedeeming
+              ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+              : const Text('Redeem'),
         ),
       ],
     );
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Navigation Drawer
-// ─────────────────────────────────────────────────────────────────────────────
-
+// ── Navigation Drawer — M3 NavigationDrawer ───────────────────────────────────
 class _AppDrawer extends ConsumerWidget {
   final Volunteer profile;
   final PlatformRole role;
@@ -649,179 +554,108 @@ class _AppDrawer extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final cs = Theme.of(context).colorScheme;
+    final tt = Theme.of(context).textTheme;
     final name = profile.name.isNotEmpty ? profile.name : 'User';
     final email = profile.email;
-
-    // Build initials avatar (up to 2 characters)
     final parts = name.trim().split(' ');
     final initials = parts.length >= 2
         ? '${parts.first[0]}${parts.last[0]}'.toUpperCase()
         : name.substring(0, name.length.clamp(1, 2)).toUpperCase();
 
-    return Drawer(
-      backgroundColor: AppColors.bgSurface,
-      child: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // ── Header ────────────────────────────────────────────────────────
-            Container(
-              padding: const EdgeInsets.fromLTRB(20, 28, 20, 24),
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [Color(0xFF0F2C24), AppColors.bgBase],
+    return NavigationDrawer(
+      onDestinationSelected: (i) {
+        Navigator.pop(context);
+        if (i == 0) context.push('/profile-setup?editing=true');
+      },
+      selectedIndex: -1,
+      children: [
+        // ── Header ───────────────────────────────────────────────────────
+        Container(
+          padding: const EdgeInsets.fromLTRB(20, 36, 20, 24),
+          color: cs.surfaceContainerHighest,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Avatar
+              CircleAvatar(
+                radius: 30,
+                backgroundColor: cs.primaryContainer,
+                child: Text(
+                  initials,
+                  style: tt.titleMedium?.copyWith(
+                    color: cs.onPrimaryContainer,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Avatar circle
-                  Container(
-                    width: 60,
-                    height: 60,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: role.color.withAlpha(40),
-                      border: Border.all(color: role.color.withAlpha(120), width: 2),
-                    ),
-                    child: Center(
-                      child: Text(
-                        initials,
-                        style: TextStyle(
-                          color: role.color,
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 14),
-                  Text(
-                    name,
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                  if (email.isNotEmpty) ...[
-                    const SizedBox(height: 2),
-                    Text(
-                      email,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: AppColors.textSecondary,
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                    ),
+              const SizedBox(height: 14),
+              Text(name, style: tt.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+              if (email.isNotEmpty) ...[
+                const SizedBox(height: 2),
+                Text(email,
+                    style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant),
+                    overflow: TextOverflow.ellipsis),
+              ],
+              const SizedBox(height: 10),
+              // Role chip
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: cs.secondaryContainer,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(role.icon, size: 13, color: cs.onSecondaryContainer),
+                    const SizedBox(width: 5),
+                    Text(role.label,
+                        style: tt.labelSmall?.copyWith(
+                          color: cs.onSecondaryContainer,
+                          fontWeight: FontWeight.w600,
+                        )),
                   ],
-                  const SizedBox(height: 10),
-                  // Role chip
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: role.color.withAlpha(30),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: role.color.withAlpha(80)),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(role.icon, size: 13, color: role.color),
-                        const SizedBox(width: 5),
-                        Text(
-                          role.label,
-                          style: TextStyle(
-                            color: role.color,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 8),
-
-            // ── Edit Profile ──────────────────────────────────────────────────
-            ListTile(
-              leading: Container(
-                width: 38,
-                height: 38,
-                decoration: BoxDecoration(
-                  color: AppColors.accent.withAlpha(25),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: const Icon(Icons.edit_outlined, color: AppColors.accent, size: 20),
-              ),
-              title: const Text(
-                'Edit Profile',
-                style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
-              ),
-              subtitle: const Text(
-                'Update name, city, and skills',
-                style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
-              ),
-              trailing: const Icon(Icons.chevron_right, color: AppColors.textSecondary, size: 20),
-              onTap: () {
-                Navigator.pop(context); // Close drawer first
-                context.push('/profile-setup?editing=true');
-              },
-            ),
-
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-              child: Divider(color: AppColors.border),
-            ),
-
-            // ── Logout ────────────────────────────────────────────────────────
-            ListTile(
-              leading: Container(
-                width: 38,
-                height: 38,
-                decoration: BoxDecoration(
-                  color: AppColors.error.withAlpha(20),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: const Icon(Icons.logout, color: AppColors.error, size: 20),
-              ),
-              title: const Text(
-                'Sign Out',
-                style: TextStyle(
-                  fontWeight: FontWeight.w600,
-                  fontSize: 15,
-                  color: AppColors.error,
                 ),
               ),
-              onTap: () async {
-                Navigator.pop(context);
-                await ref.read(authControllerProvider.notifier).signOut();
-              },
-            ),
-
-            const Spacer(),
-
-            // ── Footer branding ───────────────────────────────────────────────
-            Padding(
-              padding: const EdgeInsets.all(20),
-              child: Text(
-                'SevakAI v1.0.0',
-                style: const TextStyle(
-                  color: AppColors.textDisabled,
-                  fontSize: 12,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
-      ),
+        const SizedBox(height: 8),
+
+        // ── Destinations ─────────────────────────────────────────────────
+        const NavigationDrawerDestination(
+          icon: Icon(Icons.edit_outlined),
+          label: Text('Edit Profile'),
+        ),
+
+        const Divider(indent: 16, endIndent: 16),
+
+        // Sign Out (manual ListTile for destructive action)
+        ListTile(
+          leading: Icon(Icons.logout, color: cs.error),
+          title: Text('Sign Out',
+              style: tt.titleSmall?.copyWith(
+                color: cs.error,
+                fontWeight: FontWeight.w600,
+              )),
+          onTap: () async {
+            Navigator.pop(context);
+            await ref.read(authControllerProvider.notifier).signOut();
+          },
+        ),
+
+        const Spacer(),
+
+        Padding(
+          padding: const EdgeInsets.all(20),
+          child: Text(
+            'SevakAI v1.0.0',
+            style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant),
+            textAlign: TextAlign.center,
+          ),
+        ),
+      ],
     );
   }
 }
-

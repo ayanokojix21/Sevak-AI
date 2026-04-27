@@ -1,4 +1,4 @@
-import 'dart:typed_data';
+﻿import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -138,10 +138,10 @@ class _SubmitCommunityReportPageState extends ConsumerState<SubmitCommunityRepor
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.bgBase,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       appBar: AppBar(
         title: const Text('AI Emergency Dispatch'),
-        backgroundColor: AppColors.bgBase,
+        backgroundColor: Theme.of(context).colorScheme.surface,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
@@ -151,9 +151,9 @@ class _SubmitCommunityReportPageState extends ConsumerState<SubmitCommunityRepor
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: AppColors.bgSurface,
+                color: Theme.of(context).colorScheme.surfaceContainerLow,
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: AppColors.border),
+                border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
               ),
               child: Column(
                 children: [
@@ -161,11 +161,11 @@ class _SubmitCommunityReportPageState extends ConsumerState<SubmitCommunityRepor
                     'Quick Voice Report',
                     style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                   ),
-                  const SizedBox(height: 4),
-                  const Text(
+                  SizedBox(height: 4),
+                  Text(
                     'Speak in your local language. AI will transcribe and extract details.',
                     textAlign: TextAlign.center,
-                    style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                    style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 12),
                   ),
                   const SizedBox(height: 20),
                   GestureDetector(
@@ -174,11 +174,11 @@ class _SubmitCommunityReportPageState extends ConsumerState<SubmitCommunityRepor
                       width: 70,
                       height: 70,
                       decoration: BoxDecoration(
-                        color: _isRecording ? AppColors.error : AppColors.primary,
+                        color: _isRecording ? Theme.of(context).colorScheme.error : Theme.of(context).colorScheme.primary,
                         shape: BoxShape.circle,
                         boxShadow: [
                           BoxShadow(
-                            color: (_isRecording ? AppColors.error : AppColors.primary).withAlpha(100),
+                            color: (_isRecording ? Theme.of(context).colorScheme.error : Theme.of(context).colorScheme.primary).withAlpha(100),
                             blurRadius: 15,
                             spreadRadius: 5,
                           ),
@@ -207,10 +207,10 @@ class _SubmitCommunityReportPageState extends ConsumerState<SubmitCommunityRepor
                     ),
                   ),
                   if (_isRecording) ...[
-                    const SizedBox(height: 12),
-                    const Text(
+                    SizedBox(height: 12),
+                    Text(
                       'AI is listening...',
-                      style: TextStyle(color: AppColors.error, fontWeight: FontWeight.bold),
+                      style: TextStyle(color: Theme.of(context).colorScheme.error, fontWeight: FontWeight.bold),
                     ).animate(onPlay: (c) => c.repeat()).fadeIn().then().fadeOut(),
                   ],
                 ],
@@ -218,13 +218,13 @@ class _SubmitCommunityReportPageState extends ConsumerState<SubmitCommunityRepor
             ),
             const SizedBox(height: 24),
 
-            const Text('Manual Description', style: TextStyle(fontWeight: FontWeight.bold)),
-            const SizedBox(height: 8),
+            Text('Manual Description', style: TextStyle(fontWeight: FontWeight.bold)),
+            SizedBox(height: 8),
             TextField(
               controller: _textController,
               decoration: InputDecoration(
                 hintText: 'Describe the emergency...',
-                fillColor: AppColors.bgSurface,
+                fillColor: Theme.of(context).colorScheme.surfaceContainerLow,
                 filled: true,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -262,17 +262,17 @@ class _SubmitCommunityReportPageState extends ConsumerState<SubmitCommunityRepor
                 style: OutlinedButton.styleFrom(
                   minimumSize: const Size(double.infinity, 100),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  side: const BorderSide(color: AppColors.primary, width: 2, style: BorderStyle.solid),
+                  side: BorderSide(color: Theme.of(context).colorScheme.primary, width: 2, style: BorderStyle.solid),
                 ),
               ),
             
-            const SizedBox(height: 40),
+            SizedBox(height: 40),
             SizedBox(
               height: 56,
               child: FilledButton(
                 onPressed: _isLoading || _isRecording || _isProcessingVoice ? null : _submit,
                 style: FilledButton.styleFrom(
-                  backgroundColor: AppColors.error,
+                  backgroundColor: Theme.of(context).colorScheme.errorContainer,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                 ),
                 child: _isLoading 

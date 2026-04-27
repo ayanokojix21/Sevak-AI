@@ -11,6 +11,8 @@ class NeedConfirmationPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final cs = Theme.of(context).colorScheme;
+    final tt = Theme.of(context).textTheme;
     final needState = ref.watch(needControllerProvider);
     final need = needState.value;
 
@@ -18,63 +20,96 @@ class NeedConfirmationPage extends ConsumerWidget {
       return const Scaffold(body: Center(child: Text('No data found.')));
     }
 
-    Color urgencyColor;
-    if (need.urgencyScore >= 80) {
-      urgencyColor = AppColors.urgencyCritical;
-    } else if (need.urgencyScore >= 50) {
-      urgencyColor = AppColors.urgencyUrgent;
-    } else {
-      urgencyColor = AppColors.urgencyModerate;
-    }
+    // M3-aligned urgency color via AppTheme helper
+    final urgencyColor = AppTheme.urgencyColor(need.urgencyScore);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Confirm AI Extraction'),
+        title: const Text('AI Analysis Result'),
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24.0),
+        padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             if (need.imageUrl != null && need.imageUrl!.isNotEmpty)
               ClipRRect(
                 borderRadius: BorderRadius.circular(16),
-                child: Image.network(need.imageUrl!, height: 200, fit: BoxFit.cover),
+                child:
+                    Image.network(need.imageUrl!, height: 200, fit: BoxFit.cover),
               ),
-            const SizedBox(height: 24),
-            _buildDataRow('Category', need.needType),
-            _buildDataRow('Urgency', '${need.urgencyScore}/100', color: urgencyColor),
-            _buildDataRow('Reason', need.urgencyReason),
-            _buildDataRow('Location', need.location),
-            _buildDataRow('Coordinates', '${need.lat.toStringAsFixed(4)}, ${need.lng.toStringAsFixed(4)}'),
-            _buildDataRow('People Affected', need.peopleAffected.toString()),
+            const SizedBox(height: 20),
 
-            // High-urgency warning banner (text-only, no image yet)
-            if (need.urgencyScore > 60 && (need.imageUrl == null || need.imageUrl!.isEmpty)) ...[
-              const SizedBox(height: 8),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: AppColors.warning.withAlpha(25),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppColors.warning.withAlpha(120)),
-                ),
-                child: Row(
+            // Data rows inside a Card
+            Card(
+              color: cs.surfaceContainerLow,
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+                side: BorderSide(color: cs.outlineVariant),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
                   children: [
-                    const Icon(Icons.warning_amber_rounded, color: AppColors.warning, size: 20),
-                    const SizedBox(width: 8),
-                    const Expanded(
-                      child: Text(
-                        'A photo is required to publish high-urgency needs.',
-                        style: TextStyle(color: AppColors.warning, fontSize: 13),
-                      ),
-                    ),
+                    _DataRow(label: 'Category', value: need.needType, cs: cs, tt: tt),
+                    _DataRow(
+                        label: 'Urgency',
+                        value: '${need.urgencyScore}/100',
+                        valueColor: urgencyColor,
+                        cs: cs,
+                        tt: tt),
+                    _DataRow(label: 'Reason', value: need.urgencyReason, cs: cs, tt: tt),
+                    _DataRow(label: 'Location', value: need.location, cs: cs, tt: tt),
+                    _DataRow(
+                        label: 'Coordinates',
+                        value:
+                            '${need.lat.toStringAsFixed(4)}, ${need.lng.toStringAsFixed(4)}',
+                        cs: cs,
+                        tt: tt),
+                    _DataRow(
+                        label: 'People Affected',
+                        value: need.peopleAffected.toString(),
+                        cs: cs,
+                        tt: tt,
+                        isLast: true),
                   ],
+                ),
+              ),
+            ),
+
+            // High-urgency warning banner
+            if (need.urgencyScore > 60 &&
+                (need.imageUrl == null || need.imageUrl!.isEmpty)) ...[
+              const SizedBox(height: 12),
+              Card(
+                color: SevakColors.warning.withAlpha(25),
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  side: BorderSide(color: SevakColors.warning.withAlpha(120)),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(14),
+                  child: Row(
+                    children: [
+                      Icon(Icons.warning_amber_rounded,
+                          color: SevakColors.warning, size: 22),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          'A photo is required to publish high-urgency needs.',
+                          style: tt.bodySmall
+                              ?.copyWith(color: SevakColors.warning),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ],
 
-            const SizedBox(height: 32),
+            const SizedBox(height: 28),
             Row(
               children: [
                 Expanded(
@@ -88,19 +123,15 @@ class NeedConfirmationPage extends ConsumerWidget {
                 ),
                 const SizedBox(width: 16),
                 Expanded(
-                  child: ElevatedButton(
+                  child: FilledButton(
                     onPressed: () async {
-                      // If urgency > 60 and no photo was provided, block and redirect
                       if (need.urgencyScore > 60 &&
                           (need.imageUrl == null || need.imageUrl!.isEmpty)) {
                         final addPhoto = await showDialog<bool>(
                           context: context,
                           builder: (ctx) => AlertDialog(
-                            icon: const Icon(
-                              Icons.camera_alt_outlined,
-                              color: AppColors.warning,
-                              size: 36,
-                            ),
+                            icon: Icon(Icons.camera_alt_outlined,
+                                color: SevakColors.warning, size: 36),
                             title: const Text('Photo Required'),
                             content: Text(
                               'This need has a high urgency score of '
@@ -116,8 +147,8 @@ class NeedConfirmationPage extends ConsumerWidget {
                               FilledButton(
                                 onPressed: () => Navigator.pop(ctx, true),
                                 style: FilledButton.styleFrom(
-                                  backgroundColor: AppColors.warning,
-                                  foregroundColor: AppColors.bgBase,
+                                  backgroundColor: SevakColors.warning,
+                                  foregroundColor: Colors.black87,
                                 ),
                                 child: const Text('Add Photo'),
                               ),
@@ -132,16 +163,13 @@ class NeedConfirmationPage extends ConsumerWidget {
                         }
                         return;
                       }
-
-                      // No urgency restriction — publish normally
                       ref.read(needControllerProvider.notifier).reset();
-                      SnackbarUtils.showSuccess(context, 'Need published successfully!');
-                      context.go('/');
+                      if (context.mounted) {
+                        SnackbarUtils.showSuccess(
+                            context, 'Need published successfully!');
+                        context.go('/');
+                      }
                     },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      foregroundColor: Colors.white,
-                    ),
                     child: const Text('Publish Need'),
                   ),
                 ),
@@ -152,18 +180,45 @@ class NeedConfirmationPage extends ConsumerWidget {
       ),
     );
   }
+}
 
-  Widget _buildDataRow(String label, String value, {Color? color}) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(label, style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
-          const SizedBox(height: 4),
-          Text(value, style: TextStyle(fontSize: 18, color: color)),
+class _DataRow extends StatelessWidget {
+  final String label;
+  final String value;
+  final Color? valueColor;
+  final ColorScheme cs;
+  final TextTheme tt;
+  final bool isLast;
+
+  const _DataRow({
+    required this.label,
+    required this.value,
+    required this.cs,
+    required this.tt,
+    this.valueColor,
+    this.isLast = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label,
+            style: tt.labelSmall?.copyWith(
+                color: cs.onSurfaceVariant, letterSpacing: 0.5)),
+        const SizedBox(height: 4),
+        Text(value,
+            style: tt.titleMedium?.copyWith(
+                color: valueColor ?? cs.onSurface,
+                fontWeight:
+                    valueColor != null ? FontWeight.bold : FontWeight.normal)),
+        if (!isLast) ...[
+          const SizedBox(height: 12),
+          Divider(color: cs.outlineVariant, height: 1),
+          const SizedBox(height: 12),
         ],
-      ),
+      ],
     );
   }
 }

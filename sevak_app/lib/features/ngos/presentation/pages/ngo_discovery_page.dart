@@ -70,7 +70,7 @@ class _NgoDiscoveryPageState extends ConsumerState<NgoDiscoveryPage> {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Material(
-              color: AppColors.primary.withAlpha(20),
+              color: Theme.of(context).colorScheme.primary.withAlpha(20),
               borderRadius: BorderRadius.circular(12),
               child: InkWell(
                 borderRadius: BorderRadius.circular(12),
@@ -82,13 +82,13 @@ class _NgoDiscoveryPageState extends ConsumerState<NgoDiscoveryPage> {
                       Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: AppColors.primary.withAlpha(30),
+                          color: Theme.of(context).colorScheme.primary.withAlpha(30),
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        child: const Icon(Icons.add_business, color: AppColors.primary, size: 20),
+                        child: Icon(Icons.add_business, color: Theme.of(context).colorScheme.primary, size: 20),
                       ),
                       const SizedBox(width: 12),
-                      const Expanded(
+                      Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -98,12 +98,12 @@ class _NgoDiscoveryPageState extends ConsumerState<NgoDiscoveryPage> {
                             ),
                             Text(
                               'Create and manage your organization',
-                              style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                              style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 12),
                             ),
                           ],
                         ),
                       ),
-                      const Icon(Icons.chevron_right, color: AppColors.textDisabled),
+                      Icon(Icons.chevron_right, color: Theme.of(context).colorScheme.onSurfaceVariant),
                     ],
                   ),
                 ),
@@ -127,13 +127,13 @@ class _NgoDiscoveryPageState extends ConsumerState<NgoDiscoveryPage> {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(Icons.search_off, size: 48, color: AppColors.textDisabled),
-                        const SizedBox(height: 12),
+                        Icon(Icons.search_off, size: 48, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                        SizedBox(height: 12),
                         Text(
                           _searchQuery.isNotEmpty
                               ? 'No NGOs match "$_searchQuery"'
                               : 'No NGOs available yet',
-                          style: const TextStyle(color: AppColors.textSecondary),
+                          style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
                         ),
                       ],
                     ),
@@ -201,15 +201,15 @@ class _NgoCardState extends ConsumerState<_NgoCard> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.bgSurface,
+        backgroundColor: Theme.of(context).colorScheme.surfaceContainerLow,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text('Join ${widget.ngo.name}'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text(
+            Text(
               'Write a short message to the NGO admin:',
-              style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
+              style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 13),
             ),
             const SizedBox(height: 12),
             TextField(
@@ -251,8 +251,8 @@ class _NgoCardState extends ConsumerState<_NgoCard> {
                 }
               }
             },
-            style: FilledButton.styleFrom(backgroundColor: AppColors.accent),
-            child: const Text('Send Request', style: TextStyle(color: AppColors.bgBase)),
+            style: FilledButton.styleFrom(backgroundColor: Theme.of(context).colorScheme.tertiary),
+            child: Text('Send Request', style: TextStyle(color: Theme.of(context).colorScheme.surface)),
           ),
         ],
       ),
@@ -264,7 +264,7 @@ class _NgoCardState extends ConsumerState<_NgoCard> {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Material(
-        color: AppColors.bgSurface,
+        color: Theme.of(context).colorScheme.surfaceContainerLow,
         borderRadius: BorderRadius.circular(16),
         child: InkWell(
           borderRadius: BorderRadius.circular(16),
@@ -273,7 +273,7 @@ class _NgoCardState extends ConsumerState<_NgoCard> {
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: AppColors.border),
+              border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -286,10 +286,10 @@ class _NgoCardState extends ConsumerState<_NgoCard> {
                       width: 48,
                       height: 48,
                       decoration: BoxDecoration(
-                        color: AppColors.primary.withAlpha(30),
+                        color: Theme.of(context).colorScheme.primary.withAlpha(30),
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: const Icon(Icons.business, color: AppColors.primary),
+                      child: Icon(Icons.business, color: Theme.of(context).colorScheme.primary),
                     ),
                     const SizedBox(width: 12),
                     // Info
@@ -304,21 +304,21 @@ class _NgoCardState extends ConsumerState<_NgoCard> {
                               fontSize: 16,
                             ),
                           ),
-                          const SizedBox(height: 2),
+                          SizedBox(height: 2),
                           Row(
                             children: [
-                              const Icon(Icons.location_on, size: 13, color: AppColors.textDisabled),
-                              const SizedBox(width: 3),
+                              Icon(Icons.location_on, size: 13, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                              SizedBox(width: 3),
                               Text(
                                 widget.ngo.city.isNotEmpty ? widget.ngo.city : 'Location TBD',
-                                style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                                style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 12),
                               ),
-                              const SizedBox(width: 12),
-                              const Icon(Icons.people_outline, size: 13, color: AppColors.textDisabled),
-                              const SizedBox(width: 3),
+                              SizedBox(width: 12),
+                              Icon(Icons.people_outline, size: 13, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                              SizedBox(width: 3),
                               Text(
                                 '${widget.ngo.volunteerCount} members',
-                                style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                                style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 12),
                               ),
                             ],
                           ),
@@ -330,31 +330,31 @@ class _NgoCardState extends ConsumerState<_NgoCard> {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                         decoration: BoxDecoration(
-                          color: AppColors.accent.withAlpha(25),
+                          color: Theme.of(context).colorScheme.tertiary.withAlpha(25),
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        child: const Text(
+                        child: Text(
                           'Joined',
-                          style: TextStyle(color: AppColors.accent, fontSize: 11, fontWeight: FontWeight.w600),
+                          style: TextStyle(color: Theme.of(context).colorScheme.tertiary, fontSize: 11, fontWeight: FontWeight.w600),
                         ),
                       )
                     else
                       Icon(
                         _expanded ? Icons.expand_less : Icons.expand_more,
-                        color: AppColors.textDisabled,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
                   ],
                 ),
 
                 // Expanded details
                 if (_expanded) ...[
-                  const SizedBox(height: 16),
-                  const Divider(height: 1, color: AppColors.border),
-                  const SizedBox(height: 16),
+                  SizedBox(height: 16),
+                  Divider(height: 1, color: Theme.of(context).colorScheme.outlineVariant),
+                  SizedBox(height: 16),
                   if (widget.ngo.operatingAreas.isNotEmpty) ...[
-                    const Text(
+                    Text(
                       'OPERATING AREAS',
-                      style: TextStyle(color: AppColors.textDisabled, fontSize: 10, fontWeight: FontWeight.w600, letterSpacing: 1),
+                      style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 10, fontWeight: FontWeight.w600, letterSpacing: 1),
                     ),
                     const SizedBox(height: 6),
                     Wrap(
@@ -363,10 +363,10 @@ class _NgoCardState extends ConsumerState<_NgoCard> {
                       children: widget.ngo.operatingAreas.map((area) => Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
-                          color: AppColors.bgElevated,
+                          color: Theme.of(context).colorScheme.surfaceContainerHighest,
                           borderRadius: BorderRadius.circular(6),
                         ),
-                        child: Text(area, style: const TextStyle(fontSize: 11, color: AppColors.textSecondary)),
+                        child: Text(area, style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurfaceVariant)),
                       )).toList(),
                     ),
                     const SizedBox(height: 16),
@@ -379,8 +379,8 @@ class _NgoCardState extends ConsumerState<_NgoCard> {
                         icon: const Icon(Icons.person_add, size: 18),
                         label: const Text('Request to Join'),
                         style: FilledButton.styleFrom(
-                          backgroundColor: AppColors.accent,
-                          foregroundColor: AppColors.bgBase,
+                          backgroundColor: Theme.of(context).colorScheme.tertiary,
+                          foregroundColor: Theme.of(context).colorScheme.surface,
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         ),
                       ),

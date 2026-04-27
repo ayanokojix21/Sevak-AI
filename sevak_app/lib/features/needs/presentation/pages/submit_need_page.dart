@@ -1,4 +1,4 @@
-import 'dart:typed_data';
+﻿import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -186,19 +186,19 @@ class _SubmitNeedPageState extends ConsumerState<SubmitNeedPage> {
                 margin: const EdgeInsets.only(bottom: 20),
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                 decoration: BoxDecoration(
-                  color: AppColors.error.withAlpha(25),
+                  color: Theme.of(context).colorScheme.errorContainer.withAlpha(200),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppColors.error.withAlpha(150)),
+                  border: Border.all(color: Theme.of(context).colorScheme.error.withAlpha(150)),
                 ),
-                child: const Row(
+                child: Row(
                   children: [
-                    Icon(Icons.camera_alt, color: AppColors.error, size: 20),
+                    Icon(Icons.camera_alt, color: Theme.of(context).colorScheme.error, size: 20),
                     SizedBox(width: 10),
                     Expanded(
                       child: Text(
                         'This high-urgency need requires a photo before it can be published.',
                         style: TextStyle(
-                          color: AppColors.error,
+                          color: Theme.of(context).colorScheme.error,
                           fontWeight: FontWeight.w600,
                           fontSize: 13,
                         ),
@@ -214,13 +214,13 @@ class _SubmitNeedPageState extends ConsumerState<SubmitNeedPage> {
               child: Container(
                 height: 200,
                 decoration: BoxDecoration(
-                  color: Colors.grey.withAlpha(26),
+                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
                     // Red border when photo is required but not yet selected
                     color: photoMissing
-                        ? AppColors.error
-                        : Colors.grey.withAlpha(76),
+                        ? Theme.of(context).colorScheme.error
+                        : Theme.of(context).colorScheme.outlineVariant,
                     width: photoMissing ? 2 : 1,
                   ),
                 ),
@@ -235,15 +235,15 @@ class _SubmitNeedPageState extends ConsumerState<SubmitNeedPage> {
                           Icon(
                             Icons.camera_alt,
                             size: 48,
-                            color: photoMissing ? AppColors.error : Colors.grey,
+                            color: photoMissing ? Theme.of(context).colorScheme.error : Theme.of(context).colorScheme.onSurfaceVariant,
                           ),
-                          const SizedBox(height: 8),
+                          SizedBox(height: 8),
                           Text(
                             photoMissing
                                 ? 'Tap to take a photo (required)'
                                 : 'Tap to take a photo',
                             style: TextStyle(
-                              color: photoMissing ? AppColors.error : Colors.grey,
+                              color: photoMissing ? Theme.of(context).colorScheme.error : Theme.of(context).colorScheme.onSurfaceVariant,
                               fontWeight: photoMissing ? FontWeight.w600 : FontWeight.normal,
                             ),
                           ),
@@ -251,15 +251,15 @@ class _SubmitNeedPageState extends ConsumerState<SubmitNeedPage> {
                       ),
               ),
             ),
-            const SizedBox(height: 24),
+            SizedBox(height: 24),
 
             // ── Voice recorder ──────────────────────────────────────────────
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: AppColors.bgSurface,
+                color: Theme.of(context).colorScheme.surfaceContainerLow,
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: AppColors.border),
+                border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
               ),
               child: Column(
                 children: [
@@ -267,11 +267,11 @@ class _SubmitNeedPageState extends ConsumerState<SubmitNeedPage> {
                     'Quick Voice Report',
                     style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                   ),
-                  const SizedBox(height: 4),
-                  const Text(
+                  SizedBox(height: 4),
+                  Text(
                     'Speak in your local language. AI will transcribe details.',
                     textAlign: TextAlign.center,
-                    style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                    style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 12),
                   ),
                   const SizedBox(height: 16),
                   GestureDetector(
@@ -280,11 +280,11 @@ class _SubmitNeedPageState extends ConsumerState<SubmitNeedPage> {
                       width: 60,
                       height: 60,
                       decoration: BoxDecoration(
-                        color: _isRecording ? AppColors.error : AppColors.primary,
+                        color: _isRecording ? Theme.of(context).colorScheme.error : Theme.of(context).colorScheme.primary,
                         shape: BoxShape.circle,
                         boxShadow: [
                           BoxShadow(
-                            color: (_isRecording ? AppColors.error : AppColors.primary).withAlpha(100),
+                            color: (_isRecording ? Theme.of(context).colorScheme.error : Theme.of(context).colorScheme.primary).withAlpha(100),
                             blurRadius: 10,
                             spreadRadius: 2,
                           ),
@@ -313,10 +313,10 @@ class _SubmitNeedPageState extends ConsumerState<SubmitNeedPage> {
                     ),
                   ),
                   if (_isRecording) ...[
-                    const SizedBox(height: 8),
-                    const Text(
+                    SizedBox(height: 8),
+                    Text(
                       'AI is listening...',
-                      style: TextStyle(color: AppColors.error, fontWeight: FontWeight.bold, fontSize: 12),
+                      style: TextStyle(color: Theme.of(context).colorScheme.error, fontWeight: FontWeight.bold, fontSize: 12),
                     ).animate(onPlay: (c) => c.repeat()).fadeIn().then().fadeOut(),
                   ],
                 ],
@@ -338,13 +338,13 @@ class _SubmitNeedPageState extends ConsumerState<SubmitNeedPage> {
             const SizedBox(height: 32),
 
             // ── Submit button ───────────────────────────────────────────────
-            ElevatedButton(
+            FilledButton(
               // Disabled while recording, processing voice, loading, or photo missing
               onPressed: _isRecording || _isProcessingVoice || _isLoadingSubmission || photoMissing
                   ? null
                   : _submit,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
+              style: FilledButton.styleFrom(
+                backgroundColor: Theme.of(context).colorScheme.primary,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(
