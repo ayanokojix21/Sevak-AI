@@ -4,6 +4,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:record/record.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:http/http.dart' as http;
 
 /// Manages audio recording lifecycle for voice reports.
 ///
@@ -31,9 +32,12 @@ class AudioService {
         return false;
       }
 
-      final dir = await getTemporaryDirectory();
-      _currentPath =
-          '${dir.path}/sevak_audio_${DateTime.now().millisecondsSinceEpoch}.m4a';
+      String path = '';
+      if (!kIsWeb) {
+        final dir = await getTemporaryDirectory();
+        path = '${dir.path}/sevak_audio_${DateTime.now().millisecondsSinceEpoch}.m4a';
+      }
+      _currentPath = path;
 
       const config = RecordConfig(
         encoder: AudioEncoder.aacLc,
@@ -52,7 +56,7 @@ class AudioService {
   }
 
   /// Stops the current recording.
-  /// Returns the path to the audio file, or null on error.
+  /// Returns the path to the audio file (or blob URL on web), or null on error.
   Future<String?> stopRecording() async {
     try {
       final path = await _recorder.stop();
@@ -67,17 +71,24 @@ class AudioService {
   /// Reads audio bytes from [path] then deletes the temp file.
   Future<List<int>?> getAudioBytesAndCleanup(String path) async {
     try {
-      final file = File(path);
-      if (!await file.exists()) {
-        debugPrint('[AudioService] File not found: $path');
-        return null;
+      if (kIsWeb) {
+        // On web, the path is a blob URL. We fetch it via HTTP.
+        final response = await http.get(Uri.parse(path));
+        return response.bodyBytes;
+      } else {
+        // Native platforms use File
+        final file = File(path);
+        if (!await file.exists()) {
+          debugPrint('[AudioService] File not found: $path');
+          return null;
+        }
+        final bytes = await file.readAsBytes();
+        debugPrint('[AudioService] Read ${bytes.length} bytes from $path');
+        // Delete temp file to free device storage
+        await file.delete();
+        debugPrint('[AudioService] Temp file deleted: $path');
+        return bytes;
       }
-      final bytes = await file.readAsBytes();
-      debugPrint('[AudioService] Read ${bytes.length} bytes from $path');
-      // Delete temp file to free device storage
-      await file.delete();
-      debugPrint('[AudioService] Temp file deleted: $path');
-      return bytes;
     } catch (e) {
       debugPrint('[AudioService] Read/cleanup error: $e');
       return null;
@@ -91,7 +102,7 @@ class AudioService {
   Future<void> dispose() async {
     await _recorder.dispose();
     // Clean up any leftover temp file from an interrupted session
-    if (_currentPath != null) {
+    if (!kIsWeb && _currentPath != null && _currentPath!.isNotEmpty) {
       final f = File(_currentPath!);
       if (await f.exists()) await f.delete();
     }
@@ -104,3 +115,4 @@ final audioServiceProvider = Provider<AudioService>((ref) {
   ref.onDispose(service.dispose);
   return service;
 });
+

@@ -1,4 +1,4 @@
-import 'dart:io';
+import 'dart:typed_data';
 
 import '../entities/need_entity.dart';
 import '../repositories/need_repository.dart';
@@ -10,7 +10,7 @@ class SubmitNeedUseCase {
 
   Future<NeedEntity> call({
     required String rawText,
-    File? imageFile,
+    Uint8List? imageBytes,
     required String ngoId,
     List<int>? audioBytes,
     double? lat,
@@ -18,7 +18,7 @@ class SubmitNeedUseCase {
   }) {
     return _repository.submitNeed(
       rawText: rawText,
-      imageFile: imageFile,
+      imageBytes: imageBytes,
       ngoId: ngoId,
       audioBytes: audioBytes,
       lat: lat,

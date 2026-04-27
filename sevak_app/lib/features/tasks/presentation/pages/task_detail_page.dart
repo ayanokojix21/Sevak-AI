@@ -1,4 +1,4 @@
-import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -275,7 +275,7 @@ class TaskDetailPage extends ConsumerWidget {
 
   void _showCompleteDialog(BuildContext context, WidgetRef ref, TaskEntity task) {
     final notesController = TextEditingController();
-    File? successImage;
+    Uint8List? successImageBytes;
 
     showModalBottomSheet(
       context: context,
@@ -300,17 +300,20 @@ class TaskDetailPage extends ConsumerWidget {
               const Text('Share a success photo and a quick note for the NGO.', textAlign: TextAlign.center, style: TextStyle(color: AppColors.textSecondary)),
               const SizedBox(height: 20),
               
-              if (successImage != null)
+              if (successImageBytes != null)
                 ClipRRect(
                   borderRadius: BorderRadius.circular(12),
-                  child: Image.file(successImage!, height: 120, fit: BoxFit.cover),
+                  child: Image.memory(successImageBytes!, height: 120, fit: BoxFit.cover),
                 )
               else
                 OutlinedButton.icon(
                   onPressed: () async {
                     final picker = ImagePicker();
                     final picked = await picker.pickImage(source: ImageSource.camera);
-                    if (picked != null) setModalState(() => successImage = File(picked.path));
+                    if (picked != null) {
+                      final bytes = await picked.readAsBytes();
+                      setModalState(() => successImageBytes = bytes);
+                    }
                   },
                   icon: const Icon(Icons.add_a_photo),
                   label: const Text('Add Success Photo'),
@@ -337,8 +340,8 @@ class TaskDetailPage extends ConsumerWidget {
                   List<int>? bytes;
                   String? imageUrl;
                   
-                  if (successImage != null) {
-                    bytes = await ImageCompressor.compress(successImage!);
+                  if (successImageBytes != null) {
+                    bytes = await ImageCompressor.compress(successImageBytes!);
                     imageUrl = await cloudinary.uploadImage(bytes, 'success_${task.id}.jpg');
                   }
                   

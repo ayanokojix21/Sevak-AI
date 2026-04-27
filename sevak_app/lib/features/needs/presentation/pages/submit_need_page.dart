@@ -1,4 +1,4 @@
-import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -26,7 +26,8 @@ class SubmitNeedPage extends ConsumerStatefulWidget {
 
 class _SubmitNeedPageState extends ConsumerState<SubmitNeedPage> {
   final _textController = TextEditingController();
-  File? _selectedImage;
+  XFile? _selectedImage;
+  Uint8List? _selectedImageBytes;
   final _picker = ImagePicker();
   List<int>? _audioBytes;
   bool _isRecording = false;
@@ -36,8 +37,10 @@ class _SubmitNeedPageState extends ConsumerState<SubmitNeedPage> {
   Future<void> _pickImage() async {
     final pickedFile = await _picker.pickImage(source: ImageSource.camera);
     if (pickedFile != null) {
+      final bytes = await pickedFile.readAsBytes();
       setState(() {
-        _selectedImage = File(pickedFile.path);
+        _selectedImage = pickedFile;
+        _selectedImageBytes = bytes;
       });
     }
   }
@@ -147,7 +150,7 @@ class _SubmitNeedPageState extends ConsumerState<SubmitNeedPage> {
 
     ref.read(needControllerProvider.notifier).submitNeed(
           _textController.text.trim(),
-          _selectedImage,
+          _selectedImageBytes,
           primaryNgoId,
           audioBytes: _audioBytes,
           lat: lat,
@@ -221,10 +224,10 @@ class _SubmitNeedPageState extends ConsumerState<SubmitNeedPage> {
                     width: photoMissing ? 2 : 1,
                   ),
                 ),
-                child: _selectedImage != null
+                child: _selectedImageBytes != null
                     ? ClipRRect(
                         borderRadius: BorderRadius.circular(16),
-                        child: Image.file(_selectedImage!, fit: BoxFit.cover),
+                        child: Image.memory(_selectedImageBytes!, fit: BoxFit.cover),
                       )
                     : Column(
                         mainAxisAlignment: MainAxisAlignment.center,

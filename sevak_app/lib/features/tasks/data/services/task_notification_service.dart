@@ -59,6 +59,7 @@ class TaskNotificationService {
             final needType = data['needType'] as String? ?? 'Task';
             final location = data['location'] as String? ?? 'Unknown location';
 
+            if (kIsWeb) return;
             await _notificationsPlugin.show(
               change.doc.id.hashCode,
               'New Task Assigned \u2014 $needType',
@@ -102,6 +103,7 @@ class TaskNotificationService {
           if (status == 'ASSIGNED') {
             final needType = data['needType'] as String? ?? 'Task';
             
+            if (kIsWeb) return;
             await _notificationsPlugin.show(
               change.doc.id.hashCode + 1, // Offset ID to avoid collision
               'Volunteer Assigned \u2014 $needType',

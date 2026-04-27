@@ -1,4 +1,4 @@
-import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -21,7 +21,7 @@ class SubmitCommunityReportPage extends ConsumerStatefulWidget {
 
 class _SubmitCommunityReportPageState extends ConsumerState<SubmitCommunityReportPage> {
   final _textController = TextEditingController();
-  File? _image;
+  Uint8List? _imageBytes;
   List<int>? _audioBytes;
   bool _isLoading = false;
   bool _isRecording = false;
@@ -31,8 +31,9 @@ class _SubmitCommunityReportPageState extends ConsumerState<SubmitCommunityRepor
     final picker = ImagePicker();
     final pickedFile = await picker.pickImage(source: ImageSource.camera);
     if (pickedFile != null) {
+      final bytes = await pickedFile.readAsBytes();
       setState(() {
-        _image = File(pickedFile.path);
+        _imageBytes = bytes;
       });
     }
   }
@@ -116,7 +117,7 @@ class _SubmitCommunityReportPageState extends ConsumerState<SubmitCommunityRepor
     try {
       await ref.read(submitCommunityReportUseCaseProvider).call(
         rawText: _textController.text,
-        imageFile: _image,
+        imageBytes: _imageBytes,
         audioBytes: _audioBytes,
         lat: lat,
         lng: lng,
@@ -236,16 +237,16 @@ class _SubmitCommunityReportPageState extends ConsumerState<SubmitCommunityRepor
             
             const Text('Photo of Scene', style: TextStyle(fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
-            if (_image != null) 
+            if (_imageBytes != null) 
               Stack(
                 alignment: Alignment.topRight,
                 children: [
                   ClipRRect(
                     borderRadius: BorderRadius.circular(12),
-                    child: Image.file(_image!, height: 180, width: double.infinity, fit: BoxFit.cover),
+                    child: Image.memory(_imageBytes!, height: 180, width: double.infinity, fit: BoxFit.cover),
                   ),
                   IconButton(
-                    onPressed: () => setState(() => _image = null),
+                    onPressed: () => setState(() => _imageBytes = null),
                     icon: const CircleAvatar(
                       backgroundColor: Colors.black54,
                       child: Icon(Icons.close, color: Colors.white, size: 16),
