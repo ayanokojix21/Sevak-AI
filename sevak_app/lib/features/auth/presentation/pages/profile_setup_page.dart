@@ -1,10 +1,9 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:google_fonts/google_fonts.dart';
 
-import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/snackbar_utils.dart';
 import '../../../../providers/auth_providers.dart';
 import '../../../location/data/location_service.dart';
@@ -154,267 +153,236 @@ class _ProfileSetupPageState extends ConsumerState<ProfileSetupPage> {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final tt = Theme.of(context).textTheme;
     final authState = ref.watch(authControllerProvider);
 
     ref.listen<AsyncValue<void>>(authControllerProvider, (previous, next) {
-      if (next.hasError) {
-        SnackbarUtils.showError(context, next.error.toString());
-      }
+      if (next.hasError) SnackbarUtils.showError(context, next.error.toString());
     });
 
     return Scaffold(
-      body: Stack(
-        children: [
-          // Background gradient
-          Container(
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topRight,
-                end: Alignment.bottomLeft,
-                colors: [
-                  AppColors.bgBase,
-                  Color(0xFF0F2C24),
-                  AppColors.bgBase,
-                ],
+      backgroundColor: cs.surface,
+      appBar: widget.isEditing
+          ? AppBar(
+              title: const Text('Edit Profile'),
+              leading: IconButton(
+                icon: const Icon(Icons.arrow_back),
+                onPressed: () => context.pop(),
               ),
-            ),
-          ),
-          Positioned(
-            top: -80,
-            right: -80,
-            child: Container(
-              width: 250,
-              height: 250,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: AppColors.accent.withAlpha(40),
-              ),
-            ),
-          ),
-
-          SafeArea(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const SizedBox(height: 20),
-
-                  // Step / Edit indicator chip
+            )
+          : null,
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 480),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (!widget.isEditing) ...[
+                  // M3 step indicator
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 6),
                     decoration: BoxDecoration(
-                      color: AppColors.accent.withAlpha(25),
+                      color: cs.tertiaryContainer,
                       borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: AppColors.accent.withAlpha(60)),
                     ),
                     child: Text(
-                      widget.isEditing
-                          ? 'Edit Your Profile'
-                          : 'Step 2 of 2 — Your Profile',
-                      style: const TextStyle(
-                        color: AppColors.accent,
+                      'Step 2 of 2 — Your Profile',
+                      style: GoogleFonts.roboto(
+                        color: cs.onTertiaryContainer,
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
                   ),
-                  const SizedBox(height: 24),
-
+                  const SizedBox(height: 20),
                   Text(
-                    widget.isEditing
-                        ? 'Update Your\nProfile'
-                        : 'Complete Your\nProfile',
-                    style: const TextStyle(
-                      fontSize: 32,
-                      fontWeight: FontWeight.bold,
+                    'Complete your\nprofile',
+                    style: tt.headlineLarge?.copyWith(
+                      color: cs.onSurface,
+                      fontWeight: FontWeight.w700,
                       height: 1.2,
                     ),
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    widget.isEditing
-                        ? 'Change your details and skills anytime.'
-                        : 'Help us match you with the right volunteer opportunities.',
-                    style: const TextStyle(
-                      color: AppColors.textSecondary,
-                      fontSize: 15,
-                    ),
+                    'Help us match you with the right opportunities.',
+                    style: tt.bodyMedium?.copyWith(
+                        color: cs.onSurfaceVariant),
                   ),
-                  const SizedBox(height: 32),
+                  const SizedBox(height: 28),
+                ],
 
-                  // Glassmorphic form card
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(24),
-                    child: BackdropFilter(
-                      filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-                      child: Container(
-                        padding: const EdgeInsets.all(24),
-                        decoration: BoxDecoration(
-                          color: AppColors.bgSurface.withAlpha(150),
-                          borderRadius: BorderRadius.circular(24),
-                          border: Border.all(
-                            color: Colors.white.withAlpha(20),
-                            width: 1.5,
+                // ── Form Card ────────────────────────────────────────
+                Card(
+                  color: cs.surfaceContainerLow,
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    side: BorderSide(color: cs.outlineVariant),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Form(
+                      key: _formKey,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          // Full Name
+                          TextFormField(
+                            controller: _nameController,
+                            textCapitalization: TextCapitalization.words,
+                            textInputAction: TextInputAction.next,
+                            decoration: const InputDecoration(
+                              labelText: 'Full name',
+                              prefixIcon: Icon(Icons.person_outlined),
+                            ),
+                            validator: (v) =>
+                                v == null || v.trim().isEmpty
+                                    ? 'Required'
+                                    : null,
                           ),
-                        ),
-                        child: Form(
-                          key: _formKey,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              // Name
-                              TextFormField(
-                                controller: _nameController,
-                                decoration: const InputDecoration(
-                                  labelText: 'Full Name',
-                                  prefixIcon: Icon(Icons.person_outline),
-                                ),
-                                validator: (v) =>
-                                    v == null || v.trim().isEmpty ? 'Required' : null,
-                              ),
-                              const SizedBox(height: 16),
+                          const SizedBox(height: 16),
 
-                              // Phone
-                              TextFormField(
-                                controller: _phoneController,
-                                keyboardType: TextInputType.phone,
-                                decoration: const InputDecoration(
-                                  labelText: 'Phone Number',
-                                  prefixIcon: Icon(Icons.phone_outlined),
-                                ),
-                                validator: (v) =>
-                                    v == null || v.trim().isEmpty ? 'Required' : null,
-                              ),
-                              const SizedBox(height: 16),
-
-                              // City — with GPS auto-detect button
-                              TextFormField(
-                                controller: _cityController,
-                                decoration: InputDecoration(
-                                  labelText: 'City',
-                                  prefixIcon: const Icon(Icons.location_city_outlined),
-                                  suffixIcon: _isDetectingLocation
-                                      ? const Padding(
-                                          padding: EdgeInsets.all(12),
-                                          child: SizedBox(
-                                            width: 20,
-                                            height: 20,
-                                            child: CircularProgressIndicator(
-                                              strokeWidth: 2,
-                                              color: AppColors.accent,
-                                            ),
-                                          ),
-                                        )
-                                      : Tooltip(
-                                          message: 'Auto-detect my city',
-                                          child: IconButton(
-                                            icon: const Icon(
-                                              Icons.my_location,
-                                              color: AppColors.accent,
-                                            ),
-                                            onPressed: _detectCity,
-                                          ),
-                                        ),
-                                ),
-                                validator: (v) =>
-                                    v == null || v.trim().isEmpty ? 'Required' : null,
-                              ),
-                              const SizedBox(height: 24),
-
-                              // Skills header
-                              const Text(
-                                'YOUR SKILLS',
-                                style: TextStyle(
-                                  color: AppColors.textSecondary,
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w600,
-                                  letterSpacing: 1.0,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              const Text(
-                                'Select all that apply (at least 1)',
-                                style: TextStyle(
-                                  color: AppColors.textDisabled,
-                                  fontSize: 12,
-                                ),
-                              ),
-                              const SizedBox(height: 12),
-                              Wrap(
-                                spacing: 8,
-                                runSpacing: 8,
-                                children: _availableSkills.map((skill) {
-                                  final selected = _selectedSkills.contains(skill);
-                                  return FilterChip(
-                                    label: Text(skill),
-                                    selected: selected,
-                                    onSelected: (val) {
-                                      setState(() {
-                                        if (val) {
-                                          _selectedSkills.add(skill);
-                                        } else {
-                                          _selectedSkills.remove(skill);
-                                        }
-                                      });
-                                    },
-                                    selectedColor: AppColors.accent.withAlpha(40),
-                                    checkmarkColor: AppColors.accent,
-                                    side: BorderSide(
-                                      color: selected
-                                          ? AppColors.accent
-                                          : AppColors.border,
-                                    ),
-                                    labelStyle: TextStyle(
-                                      color: selected
-                                          ? AppColors.accent
-                                          : AppColors.textSecondary,
-                                      fontWeight: selected
-                                          ? FontWeight.w600
-                                          : FontWeight.w400,
-                                    ),
-                                  );
-                                }).toList(),
-                              ),
-                              const SizedBox(height: 32),
-
-                              // Submit button
-                              SizedBox(
-                                height: 56,
-                                child: FilledButton(
-                                  onPressed: authState.isLoading ? null : _onComplete,
-                                  style: FilledButton.styleFrom(
-                                    backgroundColor: AppColors.accent,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(16),
-                                    ),
-                                  ),
-                                  child: authState.isLoading
-                                      ? const CircularProgressIndicator(
-                                          color: Colors.white)
-                                      : Text(
-                                          widget.isEditing
-                                              ? 'Save Changes'
-                                              : 'Complete Setup',
-                                          style: const TextStyle(
-                                            fontSize: 18,
-                                            fontWeight: FontWeight.bold,
-                                            color: AppColors.bgBase,
-                                          ),
-                                        ),
-                                ),
-                              ),
-                            ],
+                          // Phone
+                          TextFormField(
+                            controller: _phoneController,
+                            keyboardType: TextInputType.phone,
+                            textInputAction: TextInputAction.next,
+                            decoration: const InputDecoration(
+                              labelText: 'Phone number',
+                              prefixIcon: Icon(Icons.phone_outlined),
+                            ),
+                            validator: (v) =>
+                                v == null || v.trim().isEmpty
+                                    ? 'Required'
+                                    : null,
                           ),
-                        ),
+                          const SizedBox(height: 16),
+
+                          // City + GPS detect
+                          TextFormField(
+                            controller: _cityController,
+                            textInputAction: TextInputAction.done,
+                            decoration: InputDecoration(
+                              labelText: 'City',
+                              prefixIcon: const Icon(Icons.location_city_outlined),
+                              suffixIcon: _isDetectingLocation
+                                  ? Padding(
+                                      padding: const EdgeInsets.all(12),
+                                      child: SizedBox(
+                                        width: 20,
+                                        height: 20,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          color: cs.primary,
+                                        ),
+                                      ),
+                                    )
+                                  : Tooltip(
+                                      message: 'Auto-detect my city',
+                                      child: IconButton(
+                                        icon: Icon(Icons.my_location,
+                                            color: cs.primary),
+                                        onPressed: _detectCity,
+                                      ),
+                                    ),
+                            ),
+                            validator: (v) =>
+                                v == null || v.trim().isEmpty
+                                    ? 'Required'
+                                    : null,
+                          ),
+                        ],
                       ),
                     ),
                   ),
-                ],
-              ),
+                ),
+                const SizedBox(height: 24),
+
+                // ── Skills Card ───────────────────────────────────────
+                Card(
+                  color: cs.surfaceContainerLow,
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    side: BorderSide(color: cs.outlineVariant),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(Icons.volunteer_activism,
+                                size: 18, color: cs.primary),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Your skills',
+                              style: tt.titleMedium?.copyWith(
+                                  color: cs.onSurface),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Select all that apply (at least 1)',
+                          style: tt.bodySmall?.copyWith(
+                              color: cs.onSurfaceVariant),
+                        ),
+                        const SizedBox(height: 16),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: _availableSkills.map((skill) {
+                            final selected = _selectedSkills.contains(skill);
+                            return FilterChip(
+                              label: Text(skill),
+                              selected: selected,
+                              onSelected: (val) {
+                                setState(() {
+                                  if (val) {
+                                    _selectedSkills.add(skill);
+                                  } else {
+                                    _selectedSkills.remove(skill);
+                                  }
+                                });
+                              },
+                            );
+                          }).toList(),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 28),
+
+                // ── Submit ────────────────────────────────────────────
+                SizedBox(
+                  width: double.infinity,
+                  height: 52,
+                  child: FilledButton(
+                    onPressed: authState.isLoading ? null : _onComplete,
+                    child: authState.isLoading
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                                strokeWidth: 2, color: Colors.white),
+                          )
+                        : Text(
+                            widget.isEditing ? 'Save changes' : 'Complete setup',
+                          ),
+                  ),
+                ),
+              ],
             ),
           ),
-        ],
+        ),
       ),
     );
   }

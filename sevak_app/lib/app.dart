@@ -24,17 +24,24 @@ import 'features/tasks/presentation/pages/task_detail_page.dart';
 import 'features/community_reports/presentation/pages/cu_dashboard_page.dart';
 import 'features/community_reports/presentation/pages/submit_community_report_page.dart';
 
+// ── Theme Mode Provider ────────────────────────────────────────────────────
+/// Persists the user's chosen brightness. Defaults to system/dark.
+final themeModeProvider = StateProvider<ThemeMode>((ref) => ThemeMode.dark);
+
 class SevakApp extends ConsumerWidget {
   const SevakApp({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final router = ref.watch(routerProvider);
+    final router    = ref.watch(routerProvider);
+    final themeMode = ref.watch(themeModeProvider);
 
     return MaterialApp.router(
       title: 'SevakAI',
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.darkTheme,
+      theme:      AppTheme.lightTheme,
+      darkTheme:  AppTheme.darkTheme,
+      themeMode:  themeMode,
       routerConfig: router,
     );
   }
@@ -89,8 +96,7 @@ class _RouterNotifier extends ChangeNotifier {
 
     // Logged in → leave splash / auth screens
     if (isLoggedIn && (isAuthRoute || loc == '/')) {
-      final isAnon = _authState.value?.isAnonymous ?? false;
-      return isAnon ? '/cu-dashboard' : '/home';
+      return '/home';
     }
 
     // Role guards — only run after profile has resolved
@@ -261,83 +267,65 @@ class _SplashPageState extends State<_SplashPage>
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final tt = Theme.of(context).textTheme;
+
     return Scaffold(
-      body: Stack(
-        children: [
-          Container(
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  AppColors.bgBase,
-                  Color(0xFF1E1C44),
-                  AppColors.bgBase,
-                ],
-              ),
-            ),
-          ),
-          Positioned(
-            top: -100,
-            left: -100,
-            child: Container(
-              width: 300,
-              height: 300,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: AppColors.primaryDark.withAlpha(76),
-              ),
-            ),
-          ),
-          Positioned(
-            bottom: -150,
-            right: -50,
-            child: Container(
-              width: 400,
-              height: 400,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: AppColors.accent.withAlpha(38),
-              ),
-            ),
-          ),
-          Center(
-            child: FadeTransition(
-              opacity: _fadeAnimation,
-              child: ScaleTransition(
-                scale: _scaleAnimation,
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Image.asset(
+      backgroundColor: cs.surface,
+      body: Center(
+        child: FadeTransition(
+          opacity: _fadeAnimation,
+          child: ScaleTransition(
+            scale: _scaleAnimation,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                // Logo in a Google-style rounded container
+                Container(
+                  width: 96,
+                  height: 96,
+                  decoration: BoxDecoration(
+                    color: cs.primaryContainer,
+                    borderRadius: BorderRadius.circular(24),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Image.asset(
                       'assets/images/logo_sevak.png',
-                      height: 120,
+                      fit: BoxFit.contain,
                     ),
-                    const SizedBox(height: 24),
-                    Text(
-                      'SevakAI',
-                      style:
-                          Theme.of(context).textTheme.displayLarge?.copyWith(
-                                color: AppColors.textPrimary,
-                                fontWeight: FontWeight.w700,
-                                letterSpacing: 1.5,
-                              ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Volunteer Coordination Platform',
-                      style:
-                          Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                color: AppColors.textSecondary,
-                                fontSize: 16,
-                              ),
-                    ),
-                  ],
+                  ),
                 ),
-              ),
+                const SizedBox(height: 32),
+                Text(
+                  'SevakAI',
+                  style: tt.headlineLarge?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: cs.onSurface,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Volunteer Coordination Platform',
+                  style: tt.bodyLarge?.copyWith(
+                    color: cs.onSurfaceVariant,
+                  ),
+                ),
+                const SizedBox(height: 48),
+                SizedBox(
+                  width: 200,
+                  child: LinearProgressIndicator(
+                    backgroundColor: cs.surfaceContainerHighest,
+                    color: cs.primary,
+                    minHeight: 4,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                ),
+              ],
             ),
           ),
-        ],
+        ),
       ),
     );
   }
