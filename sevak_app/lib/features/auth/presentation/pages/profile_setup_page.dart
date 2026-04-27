@@ -2,16 +2,20 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:geolocator/geolocator.dart';
 
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/snackbar_utils.dart';
 import '../../../../providers/auth_providers.dart';
 import '../../../location/data/location_service.dart';
+import '../../../needs/data/datasources/nominatim_datasource.dart';
 
-/// Post-signup profile completion page.
-/// Collects name, phone, city, and skills before the user can use the app.
+/// Post-signup profile completion page — also reused as "Edit Profile"
+/// when [isEditing] is true (navigated from the home drawer).
 class ProfileSetupPage extends ConsumerStatefulWidget {
-  const ProfileSetupPage({super.key});
+  final bool isEditing;
+
+  const ProfileSetupPage({super.key, this.isEditing = false});
 
   @override
   ConsumerState<ProfileSetupPage> createState() => _ProfileSetupPageState();
@@ -23,6 +27,7 @@ class _ProfileSetupPageState extends ConsumerState<ProfileSetupPage> {
   final _phoneController = TextEditingController();
   final _cityController = TextEditingController();
   final Set<String> _selectedSkills = {};
+  bool _isDetectingLocation = false;
 
   static const _availableSkills = [
     'Medical',
@@ -42,7 +47,7 @@ class _ProfileSetupPageState extends ConsumerState<ProfileSetupPage> {
   @override
   void initState() {
     super.initState();
-    // Pre-fill with existing data if available
+    // Pre-fill with existing data if available (also used for editing)
     final profile = ref.read(volunteerProfileProvider).value;
     if (profile != null) {
       _nameController.text = profile.name;
@@ -60,7 +65,64 @@ class _ProfileSetupPageState extends ConsumerState<ProfileSetupPage> {
     super.dispose();
   }
 
-  void _onComplete() async {
+  /// Auto-detects the current GPS position and fills the City field
+  /// via Nominatim reverse geocoding (takes only the first segment of
+  /// the display_name, e.g. "Lucknow" from "Lucknow, Lucknow District, …").
+  Future<void> _detectCity() async {
+    setState(() => _isDetectingLocation = true);
+    try {
+      // 1. Check / request location permission
+      final hasPerm = await LocationService.hasLocationPermission();
+      if (!hasPerm) {
+        final result = await LocationService.requestLocationPermission();
+        if (result == LocationPermission.denied ||
+            result == LocationPermission.deniedForever) {
+          if (mounted) {
+            SnackbarUtils.showError(context, 'Location permission denied');
+          }
+          return;
+        }
+      }
+
+      // 2. Check GPS is enabled
+      final isGpsOn = await LocationService.isLocationServiceEnabled();
+      if (!isGpsOn) {
+        if (mounted) {
+          SnackbarUtils.showError(
+              context, 'Please enable GPS to auto-detect your city');
+        }
+        return;
+      }
+
+      // 3. Get current position
+      final position = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+          timeLimit: Duration(seconds: 15),
+        ),
+      );
+
+      // 4. Reverse geocode → extract city (first comma-segment of display_name)
+      final rawAddress = await NominatimDatasource()
+          .reverseGeocode(position.latitude, position.longitude);
+      final city = rawAddress.split(',').first.trim();
+
+      if (mounted) {
+        setState(() => _cityController.text = city);
+        SnackbarUtils.showSuccess(context, 'City detected: $city');
+      }
+    } catch (e) {
+      debugPrint('[ProfileSetup] City detection failed: $e');
+      if (mounted) {
+        SnackbarUtils.showError(
+            context, 'Could not detect location. Please type manually.');
+      }
+    } finally {
+      if (mounted) setState(() => _isDetectingLocation = false);
+    }
+  }
+
+  Future<void> _onComplete() async {
     if (!_formKey.currentState!.validate()) return;
     if (_selectedSkills.isEmpty) {
       SnackbarUtils.showError(context, 'Please select at least one skill');
@@ -80,7 +142,13 @@ class _ProfileSetupPageState extends ConsumerState<ProfileSetupPage> {
     }
 
     if (mounted) {
-      context.go('/home');
+      if (widget.isEditing) {
+        // Return to home after editing
+        SnackbarUtils.showSuccess(context, 'Profile updated successfully!');
+        context.pop();
+      } else {
+        context.go('/home');
+      }
     }
   }
 
@@ -97,7 +165,7 @@ class _ProfileSetupPageState extends ConsumerState<ProfileSetupPage> {
     return Scaffold(
       body: Stack(
         children: [
-          // Background
+          // Background gradient
           Container(
             decoration: const BoxDecoration(
               gradient: LinearGradient(
@@ -124,7 +192,6 @@ class _ProfileSetupPageState extends ConsumerState<ProfileSetupPage> {
             ),
           ),
 
-          // Content
           SafeArea(
             child: SingleChildScrollView(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
@@ -132,7 +199,8 @@ class _ProfileSetupPageState extends ConsumerState<ProfileSetupPage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const SizedBox(height: 20),
-                  // Step indicator
+
+                  // Step / Edit indicator chip
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     decoration: BoxDecoration(
@@ -140,9 +208,11 @@ class _ProfileSetupPageState extends ConsumerState<ProfileSetupPage> {
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(color: AppColors.accent.withAlpha(60)),
                     ),
-                    child: const Text(
-                      'Step 2 of 2 — Your Profile',
-                      style: TextStyle(
+                    child: Text(
+                      widget.isEditing
+                          ? 'Edit Your Profile'
+                          : 'Step 2 of 2 — Your Profile',
+                      style: const TextStyle(
                         color: AppColors.accent,
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
@@ -150,25 +220,30 @@ class _ProfileSetupPageState extends ConsumerState<ProfileSetupPage> {
                     ),
                   ),
                   const SizedBox(height: 24),
-                  const Text(
-                    'Complete Your\nProfile',
-                    style: TextStyle(
+
+                  Text(
+                    widget.isEditing
+                        ? 'Update Your\nProfile'
+                        : 'Complete Your\nProfile',
+                    style: const TextStyle(
                       fontSize: 32,
                       fontWeight: FontWeight.bold,
                       height: 1.2,
                     ),
                   ),
                   const SizedBox(height: 8),
-                  const Text(
-                    'Help us match you with the right volunteer opportunities.',
-                    style: TextStyle(
+                  Text(
+                    widget.isEditing
+                        ? 'Change your details and skills anytime.'
+                        : 'Help us match you with the right volunteer opportunities.',
+                    style: const TextStyle(
                       color: AppColors.textSecondary,
                       fontSize: 15,
                     ),
                   ),
                   const SizedBox(height: 32),
 
-                  // Glassmorphic form
+                  // Glassmorphic form card
                   ClipRRect(
                     borderRadius: BorderRadius.circular(24),
                     child: BackdropFilter(
@@ -213,19 +288,41 @@ class _ProfileSetupPageState extends ConsumerState<ProfileSetupPage> {
                               ),
                               const SizedBox(height: 16),
 
-                              // City
+                              // City — with GPS auto-detect button
                               TextFormField(
                                 controller: _cityController,
-                                decoration: const InputDecoration(
+                                decoration: InputDecoration(
                                   labelText: 'City',
-                                  prefixIcon: Icon(Icons.location_city_outlined),
+                                  prefixIcon: const Icon(Icons.location_city_outlined),
+                                  suffixIcon: _isDetectingLocation
+                                      ? const Padding(
+                                          padding: EdgeInsets.all(12),
+                                          child: SizedBox(
+                                            width: 20,
+                                            height: 20,
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2,
+                                              color: AppColors.accent,
+                                            ),
+                                          ),
+                                        )
+                                      : Tooltip(
+                                          message: 'Auto-detect my city',
+                                          child: IconButton(
+                                            icon: const Icon(
+                                              Icons.my_location,
+                                              color: AppColors.accent,
+                                            ),
+                                            onPressed: _detectCity,
+                                          ),
+                                        ),
                                 ),
                                 validator: (v) =>
                                     v == null || v.trim().isEmpty ? 'Required' : null,
                               ),
                               const SizedBox(height: 24),
 
-                              // Skills
+                              // Skills header
                               const Text(
                                 'YOUR SKILLS',
                                 style: TextStyle(
@@ -272,20 +369,20 @@ class _ProfileSetupPageState extends ConsumerState<ProfileSetupPage> {
                                       color: selected
                                           ? AppColors.accent
                                           : AppColors.textSecondary,
-                                      fontWeight:
-                                          selected ? FontWeight.w600 : FontWeight.w400,
+                                      fontWeight: selected
+                                          ? FontWeight.w600
+                                          : FontWeight.w400,
                                     ),
                                   );
                                 }).toList(),
                               ),
                               const SizedBox(height: 32),
 
-                              // Submit
+                              // Submit button
                               SizedBox(
                                 height: 56,
                                 child: FilledButton(
-                                  onPressed:
-                                      authState.isLoading ? null : _onComplete,
+                                  onPressed: authState.isLoading ? null : _onComplete,
                                   style: FilledButton.styleFrom(
                                     backgroundColor: AppColors.accent,
                                     shape: RoundedRectangleBorder(
@@ -295,9 +392,11 @@ class _ProfileSetupPageState extends ConsumerState<ProfileSetupPage> {
                                   child: authState.isLoading
                                       ? const CircularProgressIndicator(
                                           color: Colors.white)
-                                      : const Text(
-                                          'Complete Setup',
-                                          style: TextStyle(
+                                      : Text(
+                                          widget.isEditing
+                                              ? 'Save Changes'
+                                              : 'Complete Setup',
+                                          style: const TextStyle(
                                             fontSize: 18,
                                             fontWeight: FontWeight.bold,
                                             color: AppColors.bgBase,

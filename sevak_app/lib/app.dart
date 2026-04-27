@@ -141,7 +141,11 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/profile-setup',
-        builder: (context, state) => const ProfileSetupPage(),
+        builder: (context, state) {
+          final isEditing =
+              state.uri.queryParameters['editing'] == 'true';
+          return ProfileSetupPage(isEditing: isEditing);
+        },
       ),
       GoRoute(
         path: '/home',
@@ -150,7 +154,11 @@ final routerProvider = Provider<GoRouter>((ref) {
       // Need submission
       GoRoute(
         path: '/submit-need',
-        builder: (context, state) => const SubmitNeedPage(),
+        builder: (context, state) {
+          final requirePhoto =
+              state.uri.queryParameters['requirePhoto'] == 'true';
+          return SubmitNeedPage(isPhotoRequired: requirePhoto);
+        },
       ),
       GoRoute(
         path: '/ai-processing',

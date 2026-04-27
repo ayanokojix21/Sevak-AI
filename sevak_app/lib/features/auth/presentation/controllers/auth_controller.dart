@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/constants/super_admin_config.dart';
+import '../../../../core/services/prefs_service.dart';
 import '../../domain/entities/volunteer.dart';
 import '../../domain/repositories/auth_repository.dart';
 import '../../data/repositories/firebase_auth_repository.dart';
@@ -31,9 +32,11 @@ class AuthController extends StateNotifier<AsyncValue<void>> {
     try {
       final cred = await _authRepository.signInWithEmail(email, password);
 
-      // Post-login role reconciliation
       if (cred.user != null) {
+        // Post-login role reconciliation
         await _reconcileRole(cred.user!.uid, email);
+        // Persist UID for WorkManager background isolate
+        await PrefsService.saveVolunteerUid(cred.user!.uid);
       }
 
       state = const AsyncValue.data(null);
@@ -97,7 +100,7 @@ class AuthController extends StateNotifier<AsyncValue<void>> {
             ngoMemberships: const [],
             platformRole: isSA ? 'SA' : 'CU',
             skills: [],
-            isProfileComplete: true, // Community users do not need to complete volunteer profile initially
+            isProfileComplete: true,
             createdAt: DateTime.now(),
           );
           await _userRepository.saveVolunteerProfile(volunteer);
@@ -105,6 +108,8 @@ class AuthController extends StateNotifier<AsyncValue<void>> {
           // Existing user — reconcile role (might need SA upgrade)
           await _reconcileRole(cred.user!.uid, email);
         }
+        // Persist UID for WorkManager background isolate
+        await PrefsService.saveVolunteerUid(cred.user!.uid);
       }
 
       state = const AsyncValue.data(null);
@@ -132,11 +137,13 @@ class AuthController extends StateNotifier<AsyncValue<void>> {
             ngoMemberships: const [],
             platformRole: 'CU',
             skills: [],
-            isProfileComplete: true, // Bypass profile setup for anonymous
+            isProfileComplete: true,
             createdAt: DateTime.now(),
           );
           await _userRepository.saveVolunteerProfile(volunteer);
         }
+        // Persist UID for WorkManager background isolate
+        await PrefsService.saveVolunteerUid(cred.user!.uid);
       }
 
       state = const AsyncValue.data(null);
@@ -149,6 +156,8 @@ class AuthController extends StateNotifier<AsyncValue<void>> {
     state = const AsyncValue.loading();
     try {
       await _authRepository.signOut();
+      // Remove UID so WorkManager stops sending location updates
+      await PrefsService.clearVolunteerUid();
       state = const AsyncValue.data(null);
     } catch (e, st) {
       state = AsyncValue.error(e, st);

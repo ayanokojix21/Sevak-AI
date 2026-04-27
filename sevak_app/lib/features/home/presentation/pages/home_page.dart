@@ -7,7 +7,7 @@ import '../../../../core/constants/role_definitions.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/snackbar_utils.dart';
 import '../../../../providers/auth_providers.dart';
-import '../../../auth/data/repositories/user_repository.dart';
+import '../../../auth/domain/entities/volunteer.dart';
 import '../../../tasks/data/services/task_notification_service.dart';
 import '../../../../providers/ngo_providers.dart';
 import '../../../../providers/task_providers.dart';
@@ -95,6 +95,9 @@ class _HomePageState extends ConsumerState<HomePage> {
         final role = PlatformRoleX.fromCode(profile.platformRole);
 
         return Scaffold(
+          // ── Navigation Drawer ─────────────────────────────────────────────
+          drawer: _AppDrawer(profile: profile, role: role),
+
           appBar: AppBar(
             title: Row(
               children: [
@@ -122,12 +125,6 @@ class _HomePageState extends ConsumerState<HomePage> {
                         style: TextStyle(color: role.color, fontSize: 11, fontWeight: FontWeight.w600)),
                   ],
                 ),
-              ),
-              IconButton(
-                icon: const Icon(Icons.logout),
-                onPressed: () async {
-                  await ref.read(authControllerProvider.notifier).signOut();
-                },
               ),
             ],
           ),
@@ -221,7 +218,6 @@ class _HomePageState extends ConsumerState<HomePage> {
                     onTap: () => context.push('/super-admin'),
                   ),
                   const SizedBox(height: 12),
-                  // SA can also access Dashboard to view all needs
                   _ActionCard(
                     icon: Icons.map_outlined,
                     title: 'Open Dashboard',
@@ -232,7 +228,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                   const SizedBox(height: 24),
                 ],
 
-                // NA SECTION — NGO Admin (not shown for SA, SA has own panel)
+                // NA SECTION — NGO Admin
                 if (role == PlatformRole.NA) ...[
                   _SectionHeader(icon: Icons.business, title: 'NGO Admin', color: role.color),
                   const SizedBox(height: 12),
@@ -244,7 +240,6 @@ class _HomePageState extends ConsumerState<HomePage> {
                       color: PlatformRole.NA.color,
                       onTap: () => context.push('/ngo-admin/${profile.primaryNgoId}'),
                     ),
-                    // Pending join requests badge
                     Consumer(builder: (context, ref, _) {
                       final requestsAsync = ref.watch(
                           pendingJoinRequestsProvider(profile.primaryNgoId));
@@ -379,7 +374,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                 ),
                 const SizedBox(height: 12),
 
-                // DISCOVER NGOs — CU and VL only (SA/NA/CO already have NGO)
+                // DISCOVER NGOs — CU and VL only
                 if (role == PlatformRole.CU || role == PlatformRole.VL) ...[
                   if (role == PlatformRole.CU) ...[
                     _SectionHeader(icon: Icons.history, title: 'My Emergency Reports', color: AppColors.primary),
@@ -641,3 +636,192 @@ class _InviteCodeSectionState extends ConsumerState<_InviteCodeSection> {
     );
   }
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Navigation Drawer
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _AppDrawer extends ConsumerWidget {
+  final Volunteer profile;
+  final PlatformRole role;
+
+  const _AppDrawer({required this.profile, required this.role});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final name = profile.name.isNotEmpty ? profile.name : 'User';
+    final email = profile.email;
+
+    // Build initials avatar (up to 2 characters)
+    final parts = name.trim().split(' ');
+    final initials = parts.length >= 2
+        ? '${parts.first[0]}${parts.last[0]}'.toUpperCase()
+        : name.substring(0, name.length.clamp(1, 2)).toUpperCase();
+
+    return Drawer(
+      backgroundColor: AppColors.bgSurface,
+      child: SafeArea(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // ── Header ────────────────────────────────────────────────────────
+            Container(
+              padding: const EdgeInsets.fromLTRB(20, 28, 20, 24),
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [Color(0xFF0F2C24), AppColors.bgBase],
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Avatar circle
+                  Container(
+                    width: 60,
+                    height: 60,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: role.color.withAlpha(40),
+                      border: Border.all(color: role.color.withAlpha(120), width: 2),
+                    ),
+                    child: Center(
+                      child: Text(
+                        initials,
+                        style: TextStyle(
+                          color: role.color,
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  Text(
+                    name,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  if (email.isNotEmpty) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      email,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: AppColors.textSecondary,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                  const SizedBox(height: 10),
+                  // Role chip
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: role.color.withAlpha(30),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: role.color.withAlpha(80)),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(role.icon, size: 13, color: role.color),
+                        const SizedBox(width: 5),
+                        Text(
+                          role.label,
+                          style: TextStyle(
+                            color: role.color,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 8),
+
+            // ── Edit Profile ──────────────────────────────────────────────────
+            ListTile(
+              leading: Container(
+                width: 38,
+                height: 38,
+                decoration: BoxDecoration(
+                  color: AppColors.accent.withAlpha(25),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(Icons.edit_outlined, color: AppColors.accent, size: 20),
+              ),
+              title: const Text(
+                'Edit Profile',
+                style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
+              ),
+              subtitle: const Text(
+                'Update name, city, and skills',
+                style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
+              ),
+              trailing: const Icon(Icons.chevron_right, color: AppColors.textSecondary, size: 20),
+              onTap: () {
+                Navigator.pop(context); // Close drawer first
+                context.push('/profile-setup?editing=true');
+              },
+            ),
+
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+              child: Divider(color: AppColors.border),
+            ),
+
+            // ── Logout ────────────────────────────────────────────────────────
+            ListTile(
+              leading: Container(
+                width: 38,
+                height: 38,
+                decoration: BoxDecoration(
+                  color: AppColors.error.withAlpha(20),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(Icons.logout, color: AppColors.error, size: 20),
+              ),
+              title: const Text(
+                'Sign Out',
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 15,
+                  color: AppColors.error,
+                ),
+              ),
+              onTap: () async {
+                Navigator.pop(context);
+                await ref.read(authControllerProvider.notifier).signOut();
+              },
+            ),
+
+            const Spacer(),
+
+            // ── Footer branding ───────────────────────────────────────────────
+            Padding(
+              padding: const EdgeInsets.all(20),
+              child: Text(
+                'SevakAI v1.0.0',
+                style: const TextStyle(
+                  color: AppColors.textDisabled,
+                  fontSize: 12,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
