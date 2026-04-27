@@ -1,4 +1,4 @@
-import 'dart:io';
+import 'dart:typed_data';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:uuid/uuid.dart';
@@ -35,7 +35,7 @@ class NeedRepositoryImpl implements NeedRepository {
   @override
   Future<NeedEntity> submitNeed({
     required String rawText,
-    File? imageFile,
+    Uint8List? imageBytes,
     required String ngoId,
     List<int>? audioBytes,
     double? lat,
@@ -43,8 +43,8 @@ class NeedRepositoryImpl implements NeedRepository {
   }) async {
     // 1. Compress image ONCE — reuse bytes for both upload and AI
     List<int>? compressedBytes;
-    if (imageFile != null) {
-      compressedBytes = await ImageCompressor.compress(imageFile);
+    if (imageBytes != null) {
+      compressedBytes = await ImageCompressor.compress(imageBytes);
     }
 
     // 2 & 3. Parallelize Cloudinary upload + AI analysis

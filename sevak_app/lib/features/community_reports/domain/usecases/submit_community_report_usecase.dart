@@ -1,4 +1,4 @@
-import 'dart:io';
+import 'dart:typed_data';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -42,7 +42,7 @@ class SubmitCommunityReportUseCase {
 
   Future<void> call({
     required String rawText,
-    File? imageFile,
+    Uint8List? imageBytes,
     List<int>? audioBytes,
     double? lat,
     double? lng,
@@ -50,8 +50,8 @@ class SubmitCommunityReportUseCase {
     try {
       // 1. Compress image once — reuse for both Cloudinary and AI
       List<int>? compressedBytes;
-      if (imageFile != null) {
-        compressedBytes = await ImageCompressor.compress(imageFile);
+      if (imageBytes != null) {
+        compressedBytes = await ImageCompressor.compress(imageBytes);
       }
 
       // 2 & 3. Parallelize: Upload to Cloudinary + Run AI simultaneously

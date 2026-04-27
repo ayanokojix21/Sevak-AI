@@ -1,11 +1,11 @@
-import 'dart:io';
+import 'dart:typed_data';
 import '../entities/need_entity.dart';
 
 abstract class NeedRepository {
-  /// Processes a raw submission through the AI pipeline (Cloudinary -> Gemini -> Nominatim -> Firestore)
+  /// Processes a raw submission through the AI pipeline (Cloudinary → Gemini → Nominatim → Firestore)
   Future<NeedEntity> submitNeed({
     required String rawText,
-    File? imageFile,
+    Uint8List? imageBytes,
     required String ngoId,
     List<int>? audioBytes,
     double? lat,
