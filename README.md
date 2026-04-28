@@ -71,27 +71,6 @@ Gemini is not a feature add-on. It is the **reasoning engine** for every critica
 | **AI Co-Pilot (Field Chat)** | Volunteers chat with Gemini at the scene from the Task Detail page. Gemini responds with protocol-based first-aid and shelter guidance under 50 words, with life-threat disclaimers. |
 | **Impact Story Generation** | On task completion, Gemini generates a donor-facing `headline` + 3-paragraph `story` from raw outcome notes, saved to the `impactStories` collection. |
 
-### How Gemini Is Integrated
-
-Using the official `google_generative_ai` Dart SDK with `gemini-2.5-flash`:
-
-```dart
-// AiDatasource — multimodal triage
-final model = GenerativeModel(model: 'gemini-2.5-flash', apiKey: apiKey);
-
-// Photo + text
-final response = await model.generateContent([
-  Content.multi([TextPart(prompt), DataPart('image/jpeg', imageBytes)])
-]);
-
-// Voice note
-final response = await model.generateContent([
-  Content.multi([TextPart(prompt), DataPart('audio/aac', audioBytes)])
-]);
-```
-
-All responses go through `_parseJson()` schema validation before any Firestore write.
-
 ---
 
 ## UN Sustainable Development Goals
