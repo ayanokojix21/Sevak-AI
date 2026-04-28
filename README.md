@@ -455,27 +455,6 @@ Additionally, the volunteer matching engine validates all AI-returned UIDs again
 
 ---
 
-## Demo
-
-> **Live Demo Video:** [Watch on YouTube](https://youtube.com/your-demo-link)
->
-> *Flow: Community user snaps photo → Gemini extracts urgency and location → pin appears on coordinator heatmap → coordinator claims → Gemini matches volunteer → push notification → live GPS tracking → task completed → Gemini impact story*
-
----
-
-## Team
-
-| Member | Contribution |
-|---|---|
-| **[Your Name]** | Gemini AI pipeline, matching engine, M3 UI, Firebase architecture |
-| *(Add teammates)* | — |
-
-**Institution:** [Your College / University]  
-**GDG Chapter:** [Your GDG on Campus Chapter]  
-**Country:** India
-
----
-
 <div align="center">
 
 **Google Solution Challenge 2026 — Build with AI**
