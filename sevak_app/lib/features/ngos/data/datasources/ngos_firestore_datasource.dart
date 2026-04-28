@@ -96,4 +96,31 @@ class NgosFirestoreDatasource {
 
     await batch.commit();
   }
+
+  /// Updates editable NGO fields (name, description, city).
+  Future<void> updateNgoFields(String ngoId, Map<String, dynamic> fields) async {
+    await _firestore
+        .collection(AppConstants.ngosCollection)
+        .doc(ngoId)
+        .update(fields);
+  }
+
+  /// Streams a single NGO document in real-time.
+  Stream<NgoModel?> streamNgoById(String ngoId) {
+    return _firestore
+        .collection(AppConstants.ngosCollection)
+        .doc(ngoId)
+        .snapshots()
+        .map((doc) => doc.exists && doc.data() != null
+            ? NgoModel.fromJson(doc.data()!, doc.id)
+            : null);
+  }
+
+  /// Disbands (deletes) the NGO document.
+  Future<void> disbandNgo(String ngoId) async {
+    await _firestore
+        .collection(AppConstants.ngosCollection)
+        .doc(ngoId)
+        .delete();
+  }
 }
