@@ -12,7 +12,7 @@ import '../../../auth/domain/entities/volunteer.dart';
 import '../../../tasks/data/services/task_notification_service.dart';
 import '../../../../providers/ngo_providers.dart';
 import '../../../../providers/task_providers.dart';
-import '../../../../providers/community_report_providers.dart';
+import '../../../../providers/need_providers.dart';
 import '../../../location/data/location_service.dart';
 import '../../../../app.dart';
 
@@ -314,23 +314,176 @@ class _HomePageState extends ConsumerState<HomePage> {
                 // CU + VL sections
                 if (role == PlatformRole.CU || role == PlatformRole.VL) ...[
                   if (role == PlatformRole.CU) ...[
-                    _SectionHeader(icon: Icons.history, title: 'My Emergency Reports', cs: cs, tt: tt),
-                    const SizedBox(height: 12),
-                    Consumer(builder: (context, ref, _) {
-                      final reportsAsync = ref.watch(myCommunityReportsProvider);
-                      return reportsAsync.maybeWhen(
-                        data: (reports) => reports.isEmpty ? const SizedBox.shrink() : Column(
-                          children: reports.take(2).map((report) => Padding(
-                            padding: const EdgeInsets.only(bottom: 8),
-                            child: _InfoBanner(
-                              icon: Icons.assignment_outlined,
-                              text: '${report.needType}: ${report.status}',
-                              color: report.status == 'PENDING_APPROVAL' ? SevakColors.warning : SevakColors.success,
-                              onTap: () => context.push('/cu-dashboard'),
-                            ),
-                          )).toList(),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _SectionHeader(icon: Icons.history, title: 'My Emergency Reports', cs: cs, tt: tt),
                         ),
-                        orElse: () => const SizedBox.shrink(),
+                        TextButton(
+                          onPressed: () => context.push('/cu-dashboard'),
+                          child: const Text('View All'),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Consumer(builder: (context, ref, _) {
+                      final reportsAsync = ref.watch(mySubmittedNeedsProvider);
+                      return reportsAsync.when(
+                        loading: () => const Center(child: Padding(
+                          padding: EdgeInsets.symmetric(vertical: 8),
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )),
+                        error: (e, _) => const SizedBox.shrink(),
+                        data: (reports) {
+                          if (reports.isEmpty) {
+                            return Card(
+                              color: cs.surfaceContainerLow,
+                              elevation: 0,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                side: BorderSide(color: cs.outlineVariant),
+                              ),
+                              child: Padding(
+                                padding: const EdgeInsets.all(20),
+                                child: Column(
+                                  children: [
+                                    Icon(Icons.inbox_outlined, size: 40, color: cs.onSurfaceVariant),
+                                    const SizedBox(height: 10),
+                                    Text('No reports yet',
+                                        style: tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant)),
+                                    const SizedBox(height: 12),
+                                    OutlinedButton.icon(
+                                      onPressed: () => context.push('/submit-need'),
+                                      icon: const Icon(Icons.add_rounded, size: 16),
+                                      label: const Text('Submit First Report'),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          }
+                          return Column(
+                            children: [
+                              ...reports.take(3).map((need) {
+                                Color statusColor;
+                                IconData statusIcon;
+                                String statusLabel;
+                                switch (need.status) {
+                                  case 'SCORED':
+                                    statusColor = SevakColors.info;
+                                    statusIcon = Icons.search_rounded;
+                                    statusLabel = 'Finding Volunteer';
+                                    break;
+                                  case 'ASSIGNED':
+                                    statusColor = SevakColors.warning;
+                                    statusIcon = Icons.person_pin_rounded;
+                                    statusLabel = 'Assigned';
+                                    break;
+                                  case 'IN_PROGRESS':
+                                    statusColor = SevakColors.warning;
+                                    statusIcon = Icons.directions_run_rounded;
+                                    statusLabel = 'In Progress';
+                                    break;
+                                  case 'COMPLETED':
+                                    statusColor = SevakColors.success;
+                                    statusIcon = Icons.check_circle_rounded;
+                                    statusLabel = 'Completed';
+                                    break;
+                                  case 'CLOSED':
+                                    statusColor = SevakColors.success;
+                                    statusIcon = Icons.verified_rounded;
+                                    statusLabel = 'Closed';
+                                    break;
+                                  default:
+                                    statusColor = cs.onSurfaceVariant;
+                                    statusIcon = Icons.circle_outlined;
+                                    statusLabel = need.status;
+                                }
+                                return Card(
+                                  color: cs.surfaceContainerLow,
+                                  elevation: 0,
+                                  margin: const EdgeInsets.only(bottom: 8),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    side: BorderSide(color: cs.outlineVariant),
+                                  ),
+                                  child: InkWell(
+                                    borderRadius: BorderRadius.circular(12),
+                                    onTap: () => context.push('/cu-dashboard'),
+                                    child: Padding(
+                                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                                      child: Row(
+                                        children: [
+                                          Container(
+                                            width: 40, height: 40,
+                                            decoration: BoxDecoration(
+                                              color: statusColor.withAlpha(25),
+                                              borderRadius: BorderRadius.circular(10),
+                                            ),
+                                            child: Icon(statusIcon, color: statusColor, size: 20),
+                                          ),
+                                          const SizedBox(width: 12),
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  need.needType,
+                                                  style: tt.titleSmall?.copyWith(fontWeight: FontWeight.w600),
+                                                ),
+                                                const SizedBox(height: 2),
+                                                Text(
+                                                  need.location,
+                                                  style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant),
+                                                  maxLines: 1,
+                                                  overflow: TextOverflow.ellipsis,
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                          const SizedBox(width: 8),
+                                          Column(
+                                            crossAxisAlignment: CrossAxisAlignment.end,
+                                            children: [
+                                              Container(
+                                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                                decoration: BoxDecoration(
+                                                  color: statusColor.withAlpha(25),
+                                                  borderRadius: BorderRadius.circular(20),
+                                                  border: Border.all(color: statusColor.withAlpha(80)),
+                                                ),
+                                                child: Text(
+                                                  statusLabel,
+                                                  style: TextStyle(
+                                                    fontSize: 10,
+                                                    fontWeight: FontWeight.bold,
+                                                    color: statusColor,
+                                                  ),
+                                                ),
+                                              ),
+                                              const SizedBox(height: 4),
+                                              Text(
+                                                'Urgency: ${need.urgencyScore}',
+                                                style: TextStyle(fontSize: 10, color: cs.onSurfaceVariant),
+                                              ),
+                                            ],
+                                          ),
+                                          const SizedBox(width: 4),
+                                          Icon(Icons.chevron_right_rounded, size: 18, color: cs.onSurfaceVariant),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              }),
+                              if (reports.length > 3)
+                                TextButton(
+                                  onPressed: () => context.push('/cu-dashboard'),
+                                  child: Text('+ ${reports.length - 3} more reports'),
+                                ),
+                            ],
+                          );
+                        },
                       );
                     }),
                     const SizedBox(height: 16),

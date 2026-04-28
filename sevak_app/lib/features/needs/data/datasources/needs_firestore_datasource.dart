@@ -61,4 +61,16 @@ class NeedsFirestoreDatasource {
   /// Convenience alias: stream all needs for a specific NGO.
   Stream<List<NeedModel>> streamNgoNeeds(String ngoId) =>
       streamNeeds(ngoId: ngoId);
+
+  /// Streams needs submitted by a specific user (Community User history).
+  Stream<List<NeedModel>> streamNeedsByUser(String uid) {
+    return _firestore
+        .collection(AppConstants.needsCollection)
+        .where('submittedBy', isEqualTo: uid)
+        .orderBy('createdAt', descending: true)
+        .snapshots()
+        .map((snapshot) => snapshot.docs
+            .map((doc) => NeedModel.fromJson(doc.data(), doc.id))
+            .toList());
+  }
 }

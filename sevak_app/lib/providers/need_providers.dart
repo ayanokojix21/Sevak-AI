@@ -9,6 +9,7 @@ import '../features/needs/data/repositories/need_repository_impl.dart';
 import '../features/needs/domain/repositories/need_repository.dart';
 import '../features/needs/domain/usecases/submit_need_usecase.dart';
 import '../features/needs/presentation/controllers/need_controller.dart';
+import 'auth_providers.dart';
 
 export '../features/needs/data/datasources/cloudinary_datasource.dart';
 export '../features/needs/data/datasources/ai_datasource.dart';
@@ -38,4 +39,11 @@ final submitNeedUseCaseProvider = Provider((ref) => SubmitNeedUseCase(ref.watch(
 // --- Controllers ---
 final needControllerProvider = StateNotifierProvider<NeedController, AsyncValue<NeedEntity?>>((ref) {
   return NeedController(ref.watch(submitNeedUseCaseProvider));
+});
+
+// --- User's Own Needs ---
+final mySubmittedNeedsProvider = StreamProvider<List<NeedEntity>>((ref) {
+  final user = ref.watch(authStateProvider).value;
+  if (user == null) return Stream.value([]);
+  return ref.watch(needsFirestoreProvider).streamNeedsByUser(user.uid);
 });
