@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -192,23 +192,29 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                   const SizedBox(height: 16),
 
                   // ── Google Sign-In ────────────────────────────────────
-                  OutlinedButton.icon(
+                  OutlinedButton(
                     onPressed:
                         controller.isLoading ? null : _signInGoogle,
                     style: OutlinedButton.styleFrom(
                       backgroundColor: cs.surface,
                       side: BorderSide(color: cs.outlineVariant),
                     ),
-                    icon: Image.asset(
-                      'assets/images/google_logo.png',
-                      width: 20,
-                      height: 20,
-                      errorBuilder: (_, __, ___) =>
-                          Icon(Icons.g_mobiledata, color: cs.primary, size: 22),
-                    ),
-                    label: Text(
-                      'Continue with Google',
-                      style: tt.labelLarge?.copyWith(color: cs.onSurface),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Image.asset(
+                          'assets/images/google_logo.png',
+                          width: 20,
+                          height: 20,
+                          errorBuilder: (_, __, ___) =>
+                              Icon(Icons.g_mobiledata, color: cs.primary, size: 22),
+                        ),
+                        const SizedBox(width: 10),
+                        Text(
+                          'Continue with Google',
+                          style: tt.labelLarge?.copyWith(color: cs.onSurface),
+                        ),
+                      ],
                     ),
                   ),
                   const SizedBox(height: 24),
