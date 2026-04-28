@@ -489,7 +489,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                     const SizedBox(height: 16),
                   ],
                   const SizedBox(height: 8),
-                  _SectionHeader(icon: Icons.groups_rounded, title: 'Join an NGO', cs: cs, tt: tt),
+                  _SectionHeader(icon: Icons.groups_rounded, title: 'NGO Network', cs: cs, tt: tt),
                   const SizedBox(height: 12),
                   _ActionCard(icon: Icons.explore, title: 'Discover NGOs',
                     subtitle: 'Browse and request to join organizations',
