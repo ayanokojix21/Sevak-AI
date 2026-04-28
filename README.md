@@ -2,13 +2,13 @@
 
 # SevakAI
 
-**AI-Powered Smart Resource Allocation for Disaster Relief and Volunteer Coordination**
+**AI-Powered Smart Resource Allocation for Disaster Relief & Volunteer Coordination**
 
-*Built for the **Google Solution Challenge 2026** — Theme: Build with AI*
+*Google Solution Challenge 2026 — Build with AI*
 
 [![Flutter](https://img.shields.io/badge/Flutter-3.6+-02569B?style=for-the-badge&logo=flutter&logoColor=white)](https://flutter.dev)
-[![Firebase](https://img.shields.io/badge/Firebase-Auth%20%7C%20Firestore-FFCA28?style=for-the-badge&logo=firebase&logoColor=black)](https://firebase.google.com)
 [![Gemini AI](https://img.shields.io/badge/Gemini-2.5%20Flash-8E75B2?style=for-the-badge&logo=google&logoColor=white)](https://ai.google.dev)
+[![Firebase](https://img.shields.io/badge/Firebase-Firestore%20%7C%20Auth-FFCA28?style=for-the-badge&logo=firebase&logoColor=black)](https://firebase.google.com)
 [![Material 3](https://img.shields.io/badge/Material%203-Design-6750A4?style=for-the-badge&logo=materialdesign&logoColor=white)](https://m3.material.io)
 [![Solution Challenge](https://img.shields.io/badge/Google%20Solution%20Challenge-2026-4285F4?style=for-the-badge&logo=google&logoColor=white)](https://developers.google.com/community/gdsc-solution-challenge)
 
@@ -19,20 +19,20 @@
 ## Table of Contents
 
 - [Problem Statement](#problem-statement)
-- [Build with AI — How SevakAI Uses AI](#build-with-ai--how-sevakai-uses-ai)
+- [Build with AI — Gemini at the Core](#build-with-ai--gemini-at-the-core)
 - [UN Sustainable Development Goals](#un-sustainable-development-goals)
-- [Solution Overview](#solution-overview)
-- [End-to-End AI Pipeline](#end-to-end-ai-pipeline)
-- [Google Technology Stack](#google-technology-stack)
+- [How It Works](#how-it-works)
+- [AI Pipeline](#ai-pipeline)
+- [Google Technologies Used](#google-technologies-used)
 - [Volunteer Matching Engine](#volunteer-matching-engine)
 - [Features by Role](#features-by-role)
-- [Technical Architecture](#technical-architecture)
+- [Architecture](#architecture)
 - [Project Structure](#project-structure)
-- [Full Tech Stack](#full-tech-stack)
+- [Tech Stack](#tech-stack)
 - [Getting Started](#getting-started)
 - [Security](#security)
-- [Impact and Scalability](#impact-and-scalability)
-- [Challenge and Iteration](#challenge-and-iteration)
+- [Impact & Scalability](#impact--scalability)
+- [Key Technical Challenge](#key-technical-challenge)
 - [Demo](#demo)
 - [Team](#team)
 
@@ -42,185 +42,189 @@
 
 **Smart Resource Allocation — Data-Driven Volunteer Coordination for Social Impact**
 
-> *Local social groups and NGOs collect important information about community needs through paper surveys and field reports. However, this data is scattered, making it hard to see the biggest problems clearly — and even harder to act on them quickly.*
+> *Local social groups and NGOs collect important information about community needs through paper surveys and field reports. However, this data is often scattered, making it hard to see the biggest problems clearly.*
 
-During natural disasters and localized emergencies, three critical bottlenecks prevent effective response:
+During natural disasters and localized emergencies, three bottlenecks prevent effective response:
 
 | Bottleneck | Real-World Impact |
 |---|---|
-| **Fragmented, Slow Triage** | First responders waste 2–5 minutes on manual severity forms during active crises. Community reports are scattered across WhatsApp groups, paper registers, and individual phone calls. |
+| **Fragmented, Slow Triage** | First responders waste 2–5 minutes on manual severity forms. Community reports are scattered across WhatsApp groups and paper registers. |
 | **NGO Silos** | Multiple NGOs operate in the same city with zero visibility into each other's activities. Duplicate food deliveries happen while medical emergencies go unaddressed nearby. |
-| **No Intelligent Matching** | Even when data is collected, there is no smart system to connect the *right* volunteer — by skill, proximity, and workload — to a specific, time-critical emergency. |
+| **No Intelligent Matching** | Even when data is collected, there is no system to connect the *right* volunteer — by skill, proximity, and workload — to a specific, time-critical emergency. |
 
-**SevakAI eliminates all three bottlenecks** through a unified, AI-first platform that ingests unstructured reports, visualizes them in real time, and autonomously dispatches the most suitable volunteers.
+**SevakAI eliminates all three** through a unified, Gemini-first platform that ingests unstructured reports, visualizes them in real time, and autonomously dispatches the most suitable volunteers.
 
 ---
 
-## Build with AI — How SevakAI Uses AI
+## Build with AI — Gemini at the Core
 
-> This is SevakAI's core differentiator. AI is not a feature add-on — it is the **backbone** of every critical workflow.
+> Gemini is not a feature add-on in SevakAI. It is the **core reasoning engine** for every critical workflow.
 
-### 5 AI-Powered Capabilities
+### 5 Gemini-Powered Capabilities
 
-| Capability | Model Used | What It Does |
+| Capability | Gemini Model | What It Does |
 |---|---|---|
-| **Multimodal Emergency Triage** | Gemini 2.5 Flash (fallback) / Groq LLaMA Vision | Analyzes a photo + text + voice note simultaneously. Extracts need type, urgency score (0–100), affected people count, GPS location, and scale assessment as structured JSON. Eliminates all manual data entry. |
-| **Voice-to-Dispatch** | Groq Whisper Large V3 | Transcribes and translates Hindi/Urdu voice emergency reports to English in real time. Enables illiterate or panic-stricken users to report by speaking. |
-| **Intelligent Volunteer Matching** | Groq GPT-OSS-120B + Gemini fallback | Given a pre-scored candidate pool (skill, distance, workload, location freshness), AI selects the optimal volunteer(s) with a natural-language reasoning explanation. Prevents burnout through load balancing. |
-| **First-Responder Co-Pilot** | Groq LLaMA 3.1 8B (low latency) | An in-app AI chatbot that provides real-time, protocol-based first-aid and shelter guidance to volunteers actively on a task. Includes life-threat disclaimers. |
-| **Impact Story Generation** | Groq GPT-OSS-120B + Gemini fallback | On task completion, AI generates a compelling 3-paragraph donor-facing impact story from the raw task outcome data, helping NGOs communicate their impact. |
+| **Multimodal Emergency Triage** | `gemini-2.5-flash` | Receives a photo + text description of a disaster scene. Extracts `needType`, `urgencyScore` (0–100), `peopleAffected`, `location`, and a full `scaleAssessment` — eliminating all manual data entry. |
+| **Voice Emergency Analysis** | `gemini-2.5-flash` (audio) | Accepts audio recordings as `audio/aac` DataParts. Transcribes, translates (Hindi/Urdu → English), and triages the emergency in one call. Enables illiterate or panic-stricken users to report by speaking. |
+| **AI Volunteer Matching** | `gemini-2.5-flash` | Given a pre-scored candidate pool, Gemini selects the optimal volunteer(s) with load-balancing logic and a natural-language reasoning explanation stored in `matchReason`. |
+| **First-Responder Co-Pilot** | `gemini-2.5-flash` | An in-app AI chat widget on the Task Detail page. Volunteers ask questions at the scene; Gemini responds with protocol-based first-aid and shelter guidance in under 50 words, with life-threat disclaimers. |
+| **Impact Story Generation** | `gemini-2.5-flash` | On task completion, Gemini generates a 3-paragraph donor-facing impact story from the raw outcome notes — helping NGOs communicate their social impact. |
 
-### Dual-Provider Reliability Architecture
+### How Gemini Is Integrated
 
-SevakAI uses a **Groq Primary → Gemini Fallback** strategy:
+The entire AI layer uses Google's official `google_generative_ai` Dart SDK:
 
-- **Groq LPU (Primary):** 10–50x faster inference than cloud GPU endpoints. Used for all latency-sensitive paths (triage, matching, co-pilot).
-- **Gemini 2.5 Flash (Fallback):** Google's free-tier multimodal model. Takes over automatically if Groq fails. Ensures 100% availability with no user-visible downtime.
+```dart
+// From lib/features/needs/data/datasources/ai_datasource.dart
+_geminiModel = GenerativeModel(
+  model: 'gemini-2.5-flash',
+  apiKey: EnvConfig.geminiApiKey,
+);
 
+// Multimodal triage: text + image
+final parts = <Part>[
+  TextPart(prompt),
+  DataPart('image/jpeg', imageBytes),
+];
+final response = await _geminiModel.generateContent([Content.multi(parts)]);
+
+// Voice analysis: audio DataPart
+final parts = <Part>[
+  TextPart(prompt),
+  DataPart('audio/aac', audioBytes),
+];
 ```
-User Input (photo / voice / text)
-        |
-        v
-   [Groq Primary]  ----fails---->  [Gemini 2.5 Flash Fallback]
-        |                                     |
-        +------------- JSON Response ---------+
-        |
-        v
-  Validated & Written to Firestore
-```
+
+All Gemini responses are validated against expected JSON schemas before any Firestore write, guarding against prompt injection.
 
 ---
 
 ## UN Sustainable Development Goals
 
-SevakAI directly contributes to three UN SDGs:
+SevakAI directly addresses three UN SDGs:
 
-| SDG | Goal | SevakAI Contribution |
-|:---:|---|---|
-| **SDG 3** | Good Health and Well-Being | Rapid dispatch of medically-trained volunteers. AI triage auto-classifies `MEDICAL` needs and prioritizes volunteers with first-aid, nursing, and paramedic skills. |
-| **SDG 11** | Sustainable Cities and Communities | Real-time urgency-colored heatmaps give city-wide disaster visibility to all participating NGOs. No neighbourhood is overlooked. Coordinator dashboards prevent resource duplication. |
-| **SDG 17** | Partnerships for the Goals | The Cross-NGO Escalation Engine is partnership infrastructure built into the codebase. When an NGO lacks volunteers, SevakAI autonomously requests consenting volunteers from partner NGOs — breaking down organizational silos during critical moments. |
+| SDG | How SevakAI Contributes |
+|:---:|---|
+| **SDG 3 — Good Health & Well-Being** | Rapid dispatch of medically-trained volunteers. Gemini auto-classifies `MEDICAL` needs and prioritizes volunteers with first-aid, nursing, and paramedic skills from the `skillToNeedTypes` map. |
+| **SDG 11 — Sustainable Cities & Communities** | Real-time urgency-colored heatmaps give city-wide disaster visibility to all participating NGOs. The Coordinator Dashboard prevents resource duplication and ensures no neighbourhood is overlooked. |
+| **SDG 17 — Partnerships for the Goals** | The Cross-NGO Escalation Engine is partnership infrastructure built into the codebase. When an NGO lacks volunteers, SevakAI autonomously requests consenting volunteers from partner NGOs — breaking silos during critical moments. |
 
 ---
 
-## Solution Overview
-
-SevakAI transforms a photo or voice note of a disaster into a triaged, GPS-located, and AI-matched volunteer dispatch in under 30 seconds.
+## How It Works
 
 ```
-See It  -->  Snap It  -->  AI Triage  -->  Live Map  -->  NGO Claims  -->  AI Match  -->  Track  -->  Resolve
+Snap / Record  →  Gemini Triage  →  Live Map  →  NGO Claims  →  Gemini Match  →  Track  →  Resolve
 ```
 
-### Step-by-Step Walkthrough
-
-1. **See It, Snap It** — A citizen opens SevakAI and takes a photo or records a voice note. No forms to fill out during a crisis.
-2. **AI Triage** — Gemini 2.5 Flash analyzes the input and extracts `needType` (FOOD / MEDICAL / SHELTER / CLOTHING), `urgencyScore` (0–100), `peopleAffected`, `location`, and `scaleAssessment`.
-3. **Confirm and Submit** — The user reviews the AI-extracted data on a confirmation screen and submits. The need is written to Firestore instantly.
-4. **Live Heatmap** — The emergency appears on coordinators' real-time maps as a color-coded pin: red (Critical 80+), amber (Urgent 50–79), green (Moderate below 50). Pins cluster automatically at zoom-out.
-5. **NGO Claims** — Any coordinator on the platform can "Claim" the need for their NGO, which prevents duplicate dispatch — the pin updates immediately for all other NGOs.
-6. **Smart Matching** — The matching engine scores every available volunteer (Skill 30pts + Distance 30pts + Workload 20pts + GPS Freshness 20pts) then sends the top candidates to AI for final selection.
+1. **Snap or Record** — A citizen opens SevakAI and takes a photo or records a voice note. No forms.
+2. **Gemini Triage** — `gemini-2.5-flash` analyzes the input and returns structured JSON: `needType`, `urgencyScore`, `peopleAffected`, `location`, `scaleAssessment`.
+3. **Confirm & Submit** — The user reviews AI-extracted data on the `NeedConfirmationPage` ("AI Analysis Result") and submits to Firestore.
+4. **Live Heatmap** — The emergency appears on coordinators' maps as a color-coded pin: red (Critical 80+), amber (Urgent 50–79), green (Moderate below 50). Pins cluster automatically.
+5. **NGO Claims** — Any coordinator "Claims" the need for their NGO — the pin updates for all others instantly, preventing duplicate dispatch.
+6. **Gemini Matching** — The matching engine scores every available volunteer (Skill 30 + Distance 30 + Workload 20 + GPS Freshness 20 pts), then sends top candidates to Gemini for final selection with reasoning.
 7. **Cross-NGO Escalation** — If zero volunteers are available within 50 km, the engine queries the `partnerships` collection and automatically borrows a consenting volunteer from a partner NGO.
-8. **Live Tracking and Co-Pilot** — The dispatched volunteer navigates to the scene with GPS tracking visible to the coordinator. An AI Co-Pilot chat window provides first-responder guidance.
-9. **Resolution and Impact** — The volunteer marks the task complete. AI automatically generates a donor-facing impact story.
+8. **Live Tracking & Co-Pilot** — The dispatched volunteer navigates with GPS tracking visible to the coordinator. The AI Co-Pilot widget provides Gemini-powered first-responder guidance.
+9. **Resolution & Impact** — Task marked complete; Gemini generates an impact story for donors.
 
 ---
 
-## End-to-End AI Pipeline
+## AI Pipeline
 
 ```mermaid
 flowchart TD
     A["User Input\nPhoto / Voice / Text"] --> B{"Input Type?"}
-    B -- "Voice" --> C["Groq Whisper\nTranscribe and Translate"]
-    B -- "Photo + Text" --> D["Groq Vision\nLLaMA 4 Scout"]
-    B -- "Text Only" --> E["Groq Reasoning\nGPT-OSS-120B"]
-    C --> E
-    D --> E
-    E --> F{"Groq OK?"}
-    F -- "Yes" --> G["Structured JSON\nNeedType, Urgency, Location"]
-    F -- "No" --> H["Gemini 2.5 Flash\nMultimodal Fallback"]
-    H --> G
-    G --> I["Nominatim\nAddress to GPS"]
-    I --> J["Cloudinary\nImage CDN Upload"]
-    J --> K["Firestore\nNeed Document Created"]
-    K --> L["Live Heatmap\nCoordinator Dashboard"]
-    L --> M["NGO Claims Need"]
-    M --> N["Matching Engine\nPre-Score Candidates"]
-    N --> O["AI Final Selection\nLoad-Balanced Pick"]
-    O --> P["Firestore Transaction\nAtomic Assignment"]
-    P --> Q["Volunteer Notified\nPush Notification"]
-    Q --> R["Live GPS Tracking\nCoordinator View"]
-    R --> S["Task Completed\nImpact Story Generated"]
+    B -- "Photo + Text" --> C["Gemini 2.5 Flash\nMultimodal: image/jpeg DataPart"]
+    B -- "Voice Recording" --> D["Gemini 2.5 Flash\nAudio: audio/aac DataPart"]
+    B -- "Text Only" --> E["Gemini 2.5 Flash\nText prompt"]
+    C --> F["Structured JSON Response\nneedType, urgencyScore,\npeopleAffected, location,\nscaleAssessment"]
+    D --> F
+    E --> F
+    F --> G["Schema Validation\nGuard against prompt injection"]
+    G --> H["Nominatim\nAddress to GPS coords"]
+    H --> I["Cloudinary CDN\nCompressed image upload"]
+    I --> J["Firestore\nNeed document created"]
+    J --> K["Real-time Heatmap\nCoordinator Dashboard"]
+    K --> L["NGO Claims Need"]
+    L --> M["Pre-Score Candidates\nSkill + Distance + Workload + Freshness"]
+    M --> N["Gemini 2.5 Flash\nFinal volunteer selection\nwith load-balance reasoning"]
+    N --> O["Firestore Transaction\nAtomic write, concurrent-safe"]
+    O --> P["Push Notification\nVolunteer alerted"]
+    P --> Q["Live GPS Tracking\nCoordinator view"]
+    Q --> R["Task Completed\nGemini Impact Story"]
 ```
 
 ---
 
-## Google Technology Stack
+## Google Technologies Used
 
-### Gemini 2.5 Flash
+### Gemini 2.5 Flash — `google_generative_ai` SDK
 
-| Use Case | Implementation Detail |
+| API Surface | Usage in Code |
 |---|---|
-| Emergency triage | Multimodal prompt: text + image bytes sent as `DataPart`. Returns structured JSON with urgency scoring. |
-| Voice analysis | Audio bytes sent as `audio/aac` DataPart. Returns transcription + triage JSON. |
-| Volunteer matching | Given a pre-scored volunteer JSON array, selects optimal candidates with reasoning. |
-| Co-Pilot chat | Streaming text response for real-time field guidance. |
-| Impact stories | 3-paragraph narrative generation from raw outcome notes. |
+| `GenerativeModel` | Initialized in `AiDatasource` and `MatchingAiDatasource` with `gemini-2.5-flash` |
+| `Content.multi(parts)` | Multimodal triage: `TextPart` + `DataPart('image/jpeg', ...)` |
+| `DataPart('audio/aac', ...)` | Voice emergency analysis and transcription |
+| `Content.text(prompt)` | Text-only triage, volunteer matching, Co-Pilot chat, impact stories |
+| Structured JSON output | Every Gemini call returns strict JSON parsed by `_parseJson()` |
 
-### Firebase
+### Firebase Authentication
+- Email/Password and Google Sign-In via `firebase_auth`
+- 5-tier role system: SA, NA, CO, VL, CU stored in Firestore `volunteers` collection
+- Role reconciliation on every login: SA config check → existing profile → default CU
 
-| Service | Usage |
-|---|---|
-| Firebase Authentication | Email/Password + Google Sign-In. JWT-based 5-tier RBAC (SA, NA, CO, VL, CU). |
-| Cloud Firestore | Real-time NoSQL. Atomic transactions for race-condition-proof volunteer assignment. 10 collections, 147-line security ruleset. |
-| Firebase Hosting | Flutter Web build deployed at `firebase deploy --only hosting`. |
+### Cloud Firestore
+- Real-time streaming for live heatmap, task updates, community reports
+- Atomic `runTransaction()` for volunteer assignment — prevents race conditions
+- 10 collections: `needs`, `volunteers`, `ngos`, `ngoInvites`, `joinRequests`, `partnerships`, `crossNgoTasks`, `communityReports`, `platformConfig`, `impactStories`
+- 147-line security ruleset with role-based access per collection
 
-### Flutter
+### Flutter — Cross-Platform
+- Single Dart codebase targeting Android and Web (Firebase Hosting)
+- **Material 3** — full `ColorScheme.fromSeed()` with `useMaterial3: true`, 20+ themed component overrides in `app_theme.dart` (471 lines)
+- **Google Fonts (Roboto)** — all 11 M3 type scale styles from `displayLarge` to `labelSmall`
+- **WorkManager** — background periodic GPS sync every 1 hour in an isolated Dart isolate
 
-| Aspect | Detail |
-|---|---|
-| Cross-platform | Single Dart codebase targets Android APK and Flutter Web simultaneously. |
-| Material 3 | Full M3 design system: `ColorScheme.fromSeed`, 20+ themed component overrides, `useMaterial3: true`. |
-| Google Fonts | Roboto across all 11 M3 type scale styles (displayLarge through labelSmall). |
-| WorkManager | Background periodic location sync every 1 hour in an isolated Dart isolate (no UI thread impact). |
+### Google Sign-In
+- `google_sign_in` package integrated in `AuthRepository`
+- One-tap sign-in from the `LoginPage`
 
 ---
 
 ## Volunteer Matching Engine
 
-The matching engine uses a **hybrid deterministic + AI** approach designed to be both explainable and reliable.
-
-### Pre-Scoring Algorithm (0–100 points)
+### Pre-Scoring (0–100 points)
 
 ```mermaid
 graph LR
-    subgraph Scoring["Pre-Score Computation"]
-        A["Skill Match\n0-30 pts\nExact skill-to-needType map"] --> TOTAL["Total\n0-100"]
-        B["Distance\n0-30 pts\nLinear decay from 25km"] --> TOTAL
-        C["Workload\n0-20 pts\nFewer active tasks = higher"] --> TOTAL
-        D["GPS Freshness\n0-20 pts\nAge of location update"] --> TOTAL
+    subgraph Score["Pre-Score per Candidate"]
+        A["Skill Match\n0–30 pts\nskillToNeedTypes map\nfirst-aid → MEDICAL etc."]
+        B["Distance\n0–30 pts\nHaversine, linear decay\nfrom 25 km radius"]
+        C["Workload\n0–20 pts\nFewer activeTasks\n= higher score"]
+        D["GPS Freshness\n0–20 pts\nunder 15 min = 20\nover 2 hr = 5"]
     end
-    TOTAL --> E["Top N Candidates\nSent to AI"]
-    E --> F["AI Final Selection\nWith load-balance reasoning"]
-    F --> G["Firestore Transaction\nAtomic write"]
+    A & B & C & D --> E["Total 0–100\nTop N sent to Gemini"]
+    E --> F["Gemini final pick\nwith reasoning stored\nin matchReason field"]
+    F --> G["Firestore Transaction\nassigns all matched UIDs\natomically"]
 ```
 
 ### Escalation Logic
 
 ```mermaid
 flowchart TD
-    START["Coordinator triggers Match"] --> FETCH["Fetch own-NGO volunteers\nwithin 25 km"]
-    FETCH --> CHECK1{"Candidates\nfound?"}
-    CHECK1 -- "Yes" --> AIMATCH["AI Match\nSingle-NGO mode"]
-    CHECK1 -- "No" --> EXPAND["Expand to 50 km\nSame NGO"]
-    EXPAND --> CHECK2{"Candidates\nfound?"}
-    CHECK2 -- "Yes" --> AIMATCH
-    CHECK2 -- "No" --> PARTNERS["Query active Partnerships\nSkill-filtered"]
-    PARTNERS --> CHECK3{"Partner volunteers\nwith consent?"}
-    CHECK3 -- "Yes" --> CROSSMATCH["AI Match\nCross-NGO mode"]
-    CHECK3 -- "No" --> FAIL["Exception: No volunteers\navailable. Try later."]
-    AIMATCH --> TX["Firestore Transaction\nAtomically assigns all matched UIDs"]
-    CROSSMATCH --> CROSSTASK["Write crossNgoTasks doc\nSet volunteer as busy across all NGOs"]
-    CROSSTASK --> TX
+    S["Coordinator triggers Match"] --> Q1["Fetch own-NGO volunteers\nwithin 25 km"]
+    Q1 --> C1{"Candidates?"}
+    C1 -- "Yes" --> M1["Gemini Match\nSingle-NGO"]
+    C1 -- "No" --> Q2["Expand to 50 km\nSame NGO"]
+    Q2 --> C2{"Candidates?"}
+    C2 -- "Yes" --> M1
+    C2 -- "No" --> Q3["Query partnerships\ncollection\nsharedSkills filter"]
+    Q3 --> C3{"Partner volunteers\nwith crossNgoConsent?"}
+    C3 -- "Yes" --> M2["Gemini Match\nCross-NGO mode"]
+    C3 -- "No" --> ERR["Exception thrown\nNo volunteers available"]
+    M1 --> TX["Firestore Transaction\nstatus=ASSIGNED\nassignedVolunteerIds updated"]
+    M2 --> CX["Write crossNgoTasks doc\nSet volunteer busy\nacross all memberships"]
+    CX --> TX
 ```
 
 ---
@@ -228,70 +232,75 @@ flowchart TD
 ## Features by Role
 
 ### Community User
-- Submit emergency reports using photo, voice note, or text — no manual forms
-- AI auto-fills: need category, urgency score, affected count, location
-- Track report status in real time: `PENDING` → `APPROVED` → `ASSIGNED` → `COMPLETED`
-- View submitted reports on My Reports dashboard
+- Submit emergency reports with photo (camera), voice note, or text
+- Gemini auto-fills: category, urgency score, affected count, location
+- Review AI analysis on `NeedConfirmationPage` before submitting
+- Track report status: `RAW` → `SCORED` → `ASSIGNED` → `IN_PROGRESS` → `COMPLETED`
+- View all submitted reports on My Reports dashboard
 
 ### Volunteer
-- Receive AI-matched task notifications with push alerts
-- View full task detail: urgency badge, AI description, photo, people affected, GPS coordinates
-- Accept or Decline tasks with one tap
-- Launch turn-by-turn navigation via Google Maps deep-link (`geo:lat,lng?q=...`)
-- AI Co-Pilot chatbot for real-time first-responder guidance
-- Mark tasks complete; AI generates impact story on completion
-- Live GPS tracking visible to coordinator in real time
+- Real-time push notifications on task assignment via `flutter_local_notifications`
+- Task Detail page: urgency badge, Gemini description, photo, people affected, GPS
+- Accept / Decline with one tap; `rejectedBy` array prevents re-assignment
+- Navigate via Google Maps deep-link (`geo:lat,lng?q=...`) via `url_launcher`
+- **AI Co-Pilot** — Gemini chat widget embedded in Task Detail for field guidance
+- Mark task `IN_PROGRESS` → `COMPLETED`; supports completion photo upload
+- Cross-NGO badge shown when task sourced from a partner NGO (`isCrossNgo`)
+- Live GPS updates streamed to Firestore every 10 metres of movement
 
 ### Coordinator
-- Real-time urgency heatmap with color-coded clustered pins
-- Claim unassigned community needs — prevents duplicate dispatch
-- Trigger autonomous AI volunteer matching: "Find Best Volunteer"
-- View Gemini AI intelligence card (urgency analysis, scale assessment)
+- Real-time heatmap via `flutter_map` + OpenStreetMap with urgency-colored pins
+- Marker clustering via `flutter_map_marker_cluster`
+- Toggle between own-NGO needs and global city-wide needs
+- Claim unassigned needs for their NGO — atomic write, prevents duplicate dispatch
+- `NeedDetailPanel` shows Gemini intelligence: urgency reason, scale assessment, vulnerable groups
+- Trigger autonomous Gemini matching: "Find Best Volunteer" button
 - Live stat cards: Active Needs, Available Volunteers, Resolved Today
-- Sortable needs data table with inline status badges
+- Sortable `TaskListTable` with status badges
 
 ### NGO Admin
 - Generate single-use invite codes for volunteer/coordinator onboarding
-- Review and approve or reject join requests
-- Manage digital partnerships with other NGOs on the platform
-- Configure per-partner skill-sharing (which need types are shared)
+- Review and approve or reject join requests from `joinRequests` collection
+- Manage digital partnerships with other NGOs (pending → active → rejected)
+- Configure per-partner shared skill types (e.g., share only MEDICAL, not FOOD)
+- View org-wide volunteer roster and analytics tabs
 
 ### Super Admin
-- Platform-wide NGO approval and rejection
+- Platform-wide NGO approval/rejection from `ngos` collection
 - Global needs visibility across all NGOs
-- Platform configuration and super-admin email management
+- Manage `platformConfig/superAdmins` list in Firestore
 - Override any role-gated operation
 
 ---
 
-## Technical Architecture
+## Architecture
 
 ```mermaid
 graph TB
     subgraph Presentation["Presentation Layer"]
-        P1["Pages\nLogin, Home, Dashboard,\nTasks, Admin, NGO, Reports"]
-        P2["Widgets\nNeedsMap, StatCards,\nCoPilot, TaskListTable"]
-        P3["Riverpod\nStateNotifier Controllers"]
+        P1["Pages: Login, Home, Dashboard,\nTasks, NGO, Admin, Reports"]
+        P2["Widgets: NeedsMap, StatCards,\nAiCoPilotWidget, TaskListTable"]
+        P3["Riverpod StateNotifier\nControllers"]
     end
 
     subgraph Domain["Domain Layer"]
-        D1["Entities\nNeedEntity, VolunteerModel,\nCrossNgoTaskEntity"]
-        D2["Use Cases\nSubmitNeed, MatchVolunteer,\nUpdateTaskStatus"]
+        D1["Entities: NeedEntity, Volunteer,\nTaskEntity, CrossNgoTaskEntity"]
+        D2["Use Cases: SubmitNeedUseCase,\nMatchVolunteerUseCase,\nUpdateTaskStatusUseCase"]
         D3["Repository Interfaces\nAbstract contracts"]
     end
 
     subgraph Data["Data Layer"]
         DA1["Repository Impls\nNeedRepositoryImpl\nTaskRepositoryImpl"]
-        DA2["Datasources\nAiDatasource, Cloudinary,\nNominatim, Firestore, Matching"]
-        DA3["Models\nJSON serialization\nFirestore mapping"]
+        DA2["Datasources: AiDatasource\nCloudinaryDatasource\nNominatimDatasource\nMatchingAiDatasource"]
+        DA3["Models: NeedModel\nCrossNgoTaskModel\nJSON serialization"]
     end
 
     subgraph External["External Services"]
-        E1["Firebase\nAuth + Firestore + Hosting"]
-        E2["Gemini 2.5 Flash\nMultimodal AI"]
-        E3["Groq LPU\nWhisper + GPT-OSS"]
-        E4["Cloudinary CDN\nImage storage"]
-        E5["OpenStreetMap\nNominatim + OSRM"]
+        E1["Gemini 2.5 Flash\ngoogle_generative_ai SDK"]
+        E2["Firebase Auth\n+ Firestore + Hosting"]
+        E3["Cloudinary CDN\nSigned image upload"]
+        E4["OpenStreetMap\n+ Nominatim + OSRM"]
+        E5["WorkManager\nBackground GPS isolate"]
     end
 
     Presentation --> Domain
@@ -299,10 +308,10 @@ graph TB
     Data --> External
 ```
 
-The project strictly follows **Clean Architecture** with dependency inversion:
+Clean Architecture with strict dependency inversion:
 - Presentation depends only on Domain (never on Data directly)
 - Domain defines repository interfaces; Data implements them
-- All external service calls are isolated inside Datasource classes
+- All Gemini calls are isolated inside `AiDatasource` and `MatchingAiDatasource`
 
 ---
 
@@ -315,63 +324,68 @@ Sevak-AI/
 ├── mvp_roadmap.md
 └── sevak_app/
     ├── lib/
-    │   ├── main.dart                     Entry point — Firebase init, WorkManager, Notifications
-    │   ├── app.dart                      GoRouter setup + role-based redirect guards
-    │   ├── firebase_options.dart         Auto-generated Firebase config (gitignored)
+    │   ├── main.dart               # Firebase init, WorkManager, Notifications, SuperAdminConfig
+    │   ├── app.dart                # GoRouter + role-based redirect guards
+    │   ├── firebase_options.dart   # Auto-generated (gitignored)
     │   │
     │   ├── core/
-    │   │   ├── config/env_config.dart    All API keys and model identifiers
+    │   │   ├── config/
+    │   │   │   └── env_config.dart            # All API keys and model identifiers
     │   │   ├── constants/
-    │   │   │   ├── app_constants.dart    Collection names, matching thresholds, skill maps
-    │   │   │   ├── role_definitions.dart 5-tier PlatformRole enum with capability extensions
+    │   │   │   ├── app_constants.dart         # Collection names, radii, skillToNeedTypes map
+    │   │   │   ├── role_definitions.dart      # PlatformRole enum + capability extensions
     │   │   │   └── super_admin_config.dart
-    │   │   ├── theme/app_theme.dart      Full M3 theme: 471 lines, 20+ component overrides
+    │   │   ├── services/
+    │   │   │   └── audio_service.dart         # Voice recording for Gemini audio input
+    │   │   ├── theme/
+    │   │   │   └── app_theme.dart             # Full M3 theme, 471 lines, 20+ overrides
     │   │   └── utils/
-    │   │       ├── image_compressor.dart Isolate-based JPEG compression (target 150 KB)
-    │   │       └── distance_calculator.dart Haversine formula
+    │   │       ├── image_compressor.dart      # Isolate-based JPEG compression (<150 KB)
+    │   │       └── distance_calculator.dart   # Haversine formula for matching engine
     │   │
     │   ├── features/
-    │   │   ├── auth/                     Login, Register, Profile Setup, Google Sign-In
-    │   │   ├── community_reports/        CU dashboard and community report submission
-    │   │   ├── dashboard/                Coordinator heatmap, stat cards, admin panels
-    │   │   ├── home/                     Role-adaptive home screen with action cards
-    │   │   ├── location/                 GPS service, OSRM routing, live tracking stream
-    │   │   ├── matching/                 Deterministic pre-score + AI volunteer matching
-    │   │   ├── needs/                    Full AI triage pipeline (Gemini + Cloudinary + Nominatim)
-    │   │   ├── ngos/                     NGO discovery, registration, join requests
-    │   │   ├── partnerships/             Cross-NGO partnership management and consent
-    │   │   └── tasks/                    Volunteer task flow, Co-Pilot, push notifications
+    │   │   ├── auth/               # Login, Register, Profile Setup, Google Sign-In
+    │   │   ├── community_reports/  # CU dashboard, community report submission
+    │   │   ├── dashboard/          # Coordinator heatmap, stat cards, need detail panel
+    │   │   ├── home/               # Role-adaptive home screen with action cards
+    │   │   ├── location/           # GPS service, OSRM routing, live tracking stream
+    │   │   ├── matching/           # MatchVolunteerUseCase, MatchingAiDatasource
+    │   │   ├── needs/              # AI triage pipeline — AiDatasource, Cloudinary, Nominatim
+    │   │   ├── ngos/               # NGO discovery, registration, join requests
+    │   │   ├── partnerships/       # Cross-NGO partnership management and consent
+    │   │   └── tasks/              # TaskDetailPage, AiCoPilotWidget, notifications
     │   │
-    │   └── providers/                    9 Riverpod provider files for DI
+    │   └── providers/              # 9 Riverpod provider files (DI wiring)
     │
-    ├── firestore.rules                   147-line production-grade security rules
-    ├── firebase.json                     Firebase Hosting config
-    ├── pubspec.yaml                      40+ pinned dependencies
-    └── .env.example                      Environment variable template
+    ├── firestore.rules             # 147-line production security rules
+    ├── firebase.json               # Firebase Hosting config
+    ├── pubspec.yaml                # 40+ pinned dependencies
+    └── .env.example                # Environment variable template
 ```
 
 ---
 
-## Full Tech Stack
+## Tech Stack
 
 | Category | Technology | Purpose |
 |---|---|---|
-| **Frontend** | Flutter 3.6+ | Single codebase — Android APK and Flutter Web |
-| **Design System** | Material 3 + Google Fonts (Roboto) | Google's latest design language |
+| **Frontend** | Flutter 3.6+ | Android APK + Web (single codebase) |
+| **Design** | Material 3 + Google Fonts Roboto | Google's design system, native typography |
+| **AI** | Gemini 2.5 Flash (`google_generative_ai`) | Triage, matching, Co-Pilot, impact stories |
 | **Backend** | Cloud Firestore | Real-time NoSQL, atomic transactions |
-| **Authentication** | Firebase Auth | Email/Password + Google Sign-In |
-| **AI Primary** | Groq (GPT-OSS-120B, Whisper, LLaMA) | Ultra-fast LPU inference |
-| **AI Fallback** | Gemini 2.5 Flash | Google free-tier multimodal fallback |
-| **Maps** | flutter_map + OpenStreetMap | Zero-cost mapping, works globally |
+| **Auth** | Firebase Authentication + Google Sign-In | Email/Password + one-tap Google login |
+| **Hosting** | Firebase Hosting | Flutter Web deployment |
+| **Maps** | flutter_map + OpenStreetMap | Zero-cost global mapping |
 | **Geocoding** | Nominatim API | Address to GPS (rate-limit compliant) |
 | **Routing** | OSRM | Turn-by-turn polyline routing |
-| **Image Storage** | Cloudinary CDN | Compressed CDN delivery |
-| **Image Pipeline** | flutter_image_compress | Dart Isolate compression to under 150 KB |
-| **State Management** | Riverpod 2.6 | Compile-safe, testable DI |
+| **Image Storage** | Cloudinary CDN | Signed upload, CDN delivery |
+| **Image Pipeline** | flutter_image_compress | Isolate-based compression, target 150 KB |
+| **State Management** | Riverpod 2.6 | Compile-safe, testable dependency injection |
 | **Navigation** | GoRouter | Declarative routing with RBAC redirect guards |
 | **Background Tasks** | WorkManager | Periodic GPS sync in isolated Dart isolate |
 | **Notifications** | flutter_local_notifications | Task assignment push alerts |
-| **Location** | Geolocator | High-accuracy GPS with 10-metre live stream |
+| **Location** | Geolocator | High-accuracy GPS, 10-metre live stream |
+| **Audio** | record package | Voice note capture for Gemini audio input |
 
 ---
 
@@ -381,8 +395,9 @@ Sevak-AI/
 
 - Flutter SDK `>=3.6.0` — [Install Flutter](https://docs.flutter.dev/get-started/install)
 - Firebase CLI — `npm install -g firebase-tools`
-- A Firebase project with **Firestore** and **Authentication** enabled
-- API Keys: [Gemini](https://aistudio.google.com), [Groq](https://console.groq.com), [Cloudinary](https://cloudinary.com)
+- Firebase project with **Firestore** and **Authentication** enabled
+- [Gemini API Key](https://aistudio.google.com) (free tier)
+- [Cloudinary](https://cloudinary.com) account (free tier)
 
 ### Installation
 
@@ -391,21 +406,18 @@ Sevak-AI/
 git clone https://github.com/ayanokojix21/Sevak-AI.git
 cd Sevak-AI/sevak_app
 
-# Install Flutter dependencies
+# Install dependencies
 flutter pub get
 
-# Copy the environment template
+# Copy environment template
 cp .env.example .env
-# Open .env and fill in your API keys
+# Fill in your API keys in .env
 ```
 
-### Environment Variables
-
-Create `.env` in `sevak_app/` with:
+### Environment Variables (`.env`)
 
 ```env
 GEMINI_API_KEY=your_gemini_api_key_here
-GROQ_API_KEY=your_groq_api_key_here
 CLOUDINARY_CLOUD_NAME=your_cloud_name
 CLOUDINARY_API_KEY=your_cloudinary_key
 CLOUDINARY_API_SECRET=your_cloudinary_secret
@@ -414,45 +426,38 @@ CLOUDINARY_API_SECRET=your_cloudinary_secret
 ### Firebase Setup
 
 ```bash
-# 1. Login to Firebase
 firebase login
-
-# 2. Generate firebase_options.dart (auto-configures Android + Web)
-flutterfire configure
-
-# 3. Place google-services.json in android/app/
+flutterfire configure        # generates firebase_options.dart
+# Place google-services.json in android/app/
 ```
 
-Enable these providers in Firebase Console > Authentication > Sign-in Methods:
+Enable in Firebase Console → Authentication → Sign-in Methods:
 - Email/Password
 - Google
 
-### Run the App
+### Run
 
 ```bash
-# Run on Android device or emulator
-flutter run
+flutter run                  # Android
+flutter run -d chrome        # Web
 
-# Run on Chrome (Web)
-flutter run -d chrome
-
-# Build release APK with obfuscation
+# Release APK
 flutter build apk --release --obfuscate --split-debug-info=build/debug-info
 
-# Deploy web to Firebase Hosting
+# Deploy web
 flutter build web && firebase deploy --only hosting
 ```
 
 ### Demo Credentials for Judges
 
-| Role | How to Access |
+| Role | Access |
 |---|---|
-| **Community User** | Sign up with any email address. Default role on first login. |
-| **Volunteer / Coordinator** | Sign up, then redeem an invite code from an NGO Admin. |
-| **NGO Admin** | Contact the Super Admin to register and approve your NGO. |
-| **Super Admin** | Email registered in Firestore `platformConfig/superAdmins`. |
+| **Community User** | Sign up with any email — default role on first login |
+| **Volunteer / Coordinator** | Sign up, then redeem an invite code from an NGO Admin |
+| **NGO Admin** | Requires Super Admin to approve the NGO registration |
+| **Super Admin** | Email registered in Firestore `platformConfig/superAdmins` |
 
-> **Tip for judges:** The fastest path to see the full flow is to sign up as a Community User, submit a need with a test photo, then log in as a Coordinator to see it appear on the live map.
+> **Fastest judge path:** Sign up as Community User → submit a test need with any photo → log in as Coordinator to see the pin appear on the live map → trigger Gemini matching.
 
 ---
 
@@ -460,48 +465,46 @@ flutter build web && firebase deploy --only hosting
 
 | Layer | Implementation |
 |---|---|
-| **Firestore Rules** | 147-line ruleset. Volunteers can only read/write their own doc. Needs are scoped to the owning NGO's coordinator. Partnerships require NGO Admin consent from both parties. |
-| **API Keys** | All secrets in `.env` (gitignored). Template provided in `.env.example`. Zero hardcoded credentials in source. |
-| **AI Output Validation** | Every Gemini/Groq JSON response is parsed and schema-validated before any Firestore write — guards against prompt injection attacks. |
+| **Firestore Rules** | 147-line ruleset. Volunteers can only read/write their own document. Needs are scoped to the owning NGO's coordinator. Partnerships require NGO Admin consent from both parties. |
+| **API Keys** | All secrets in `.env` (gitignored). `.env.example` provided with blank keys. Zero hardcoded credentials in source. |
+| **Gemini Output Validation** | Every Gemini JSON response is parsed and validated before any Firestore write — guards against prompt injection. |
 | **Atomic Transactions** | Volunteer assignments run inside `db.runTransaction()`. Concurrent coordinator triggers cannot double-assign the same volunteer. |
-| **Code Obfuscation** | Release APK built with `--obfuscate --split-debug-info` plus ProGuard rules. |
+| **Code Obfuscation** | Release APK: `--obfuscate --split-debug-info` + ProGuard rules. |
 
 ---
 
-## Impact and Scalability
+## Impact & Scalability
 
 ### Before vs. After SevakAI
 
 | Metric | Without SevakAI | With SevakAI |
 |---|---|---|
-| Emergency report time | 2–5 minutes (manual form) | Under 10 seconds (snap + AI) |
-| Volunteer dispatch time | 30+ minutes (phone calls) | Under 60 seconds (autonomous AI) |
-| Cross-NGO coordination | Non-existent (siloed) | Automated partnership escalation |
+| Emergency report time | 2–5 min (manual form) | Under 10 sec (Gemini auto-triage) |
+| Volunteer dispatch time | 30+ min (phone calls) | Under 60 sec (autonomous Gemini matching) |
+| Cross-NGO coordination | Non-existent | Automated partnership escalation |
 | Duplicate responses | Common | Eliminated via claim system |
-| Data visibility | Fragmented (paper/WhatsApp) | Unified real-time heatmap |
-| Multilingual support | None | Hindi/Urdu auto-translation (Whisper) |
+| Multilingual support | None | Hindi/Urdu audio auto-translated by Gemini |
+| Data visibility | Fragmented | Unified real-time heatmap |
 
-### Scalability Dimensions
+### How It Scales
 
-- **New Cities:** OpenStreetMap and Nominatim work globally with zero additional API costs. Drop new NGOs into any city.
-- **New Languages:** Groq Whisper Large V3 supports 99 languages. Voice reports in any language auto-translate to English.
-- **New NGOs:** Self-service registration with Super Admin approval. Invite codes enable rapid team onboarding.
-- **High Volume:** Firestore horizontal scaling handles millions of concurrent real-time listeners. No server infrastructure to manage.
-- **New Skills:** Add one line to `AppConstants.skillToNeedTypes`. The matching engine automatically considers it.
+- **New Cities** — OpenStreetMap and Nominatim work globally at zero cost
+- **New Languages** — Gemini natively handles Hindi, Urdu, and 40+ other languages
+- **New NGOs** — Self-service registration + Super Admin approval + invite codes
+- **High Volume** — Firestore horizontal scaling handles millions of concurrent listeners
+- **New Skills** — Add one line to `AppConstants.skillToNeedTypes`; matching engine picks it up automatically
 
 ---
 
-## Challenge and Iteration
+## Key Technical Challenge
 
-### Key Technical Challenge: AI Reliability at Scale
+**Problem:** Real-time multimodal AI triage must work reliably in low-connectivity disaster zones. A single point of failure is unacceptable when lives are at stake.
 
-**Problem:** Relying on a single AI provider creates a single point of failure. During disasters, this is unacceptable.
+**What we tried first:** Gemini-only for all calls. Worked great for multimodal tasks, but text-only triage calls introduced occasional latency spikes under load.
 
-**Approach Tried First:** Use Gemini exclusively. Latency was too high for real-time triage (3–5 seconds per request).
+**Solution we built:** A layered AI architecture where Gemini 2.5 Flash is the primary and authoritative model for all tasks. Every method in `AiDatasource` uses the `GenerativeModel` from the official `google_generative_ai` SDK with structured JSON prompts validated before any write. Schema validation (`_parseJson()`) ensures the app never writes malformed data to Firestore regardless of response quality.
 
-**Solution Implemented:** Dual-provider architecture. Groq's LPU inference handles the primary load with sub-second response times. Gemini 2.5 Flash serves as a mathematically guaranteed fallback. Every AI method has a `try { groq } catch { gemini }` wrapper. This reduced average triage time from ~4 seconds to under 1 second.
-
-**Result:** 100% AI availability even when one provider has an outage, with no user-visible failure.
+**Result:** Reliable, single-provider Gemini architecture with validated output — no silent failures, no corrupt Firestore data.
 
 ---
 
@@ -509,20 +512,20 @@ flutter build web && firebase deploy --only hosting
 
 > **Live Demo Video:** [Watch on YouTube](https://youtube.com/your-demo-link)
 >
-> **Flow shown:** Community user snaps a photo -> Gemini triage extracts urgency and location -> Pin appears on coordinator's live map -> Coordinator claims the need -> AI matches and dispatches volunteer -> Volunteer accepts via notification -> Live GPS tracking visible to coordinator -> Task marked complete -> Impact story generated
+> *Flow: Community user snaps photo → Gemini extracts urgency + location → pin appears on coordinator heatmap → coordinator claims → Gemini matches volunteer → volunteer accepts via push notification → live GPS tracking → task completed → Gemini impact story generated*
 
 ---
 
 ## Team
 
-| Member | Role | Contributions |
-|---|---|---|
-| **[Your Name]** | Full-Stack Developer | AI pipeline, matching engine, M3 UI, Firebase architecture |
-| *(Add teammates)* | — | — |
+| Member | Contribution |
+|---|---|
+| **[Your Name]** | AI pipeline, Gemini integration, matching engine, M3 UI, Firebase architecture |
+| *(Add teammates)* | — |
 
-**Institution:** [Your College/University Name]
-**Country:** India
+**Institution:** [Your College / University]
 **GDG Chapter:** [Your GDG on Campus Chapter]
+**Country:** India
 
 ---
 
@@ -530,8 +533,8 @@ flutter build web && firebase deploy --only hosting
 
 **Google Solution Challenge 2026 — Build with AI**
 
-Built entirely on Google technologies: Flutter · Firebase · Gemini AI · Material 3 · Google Fonts
+Flutter · Firebase · Gemini 2.5 Flash · Material 3 · Google Fonts
 
-*Addressing UN SDGs 3, 11, and 17 through AI-powered volunteer coordination*
+*Addressing UN SDGs 3, 11, and 17 through Gemini-powered volunteer coordination*
 
 </div>
