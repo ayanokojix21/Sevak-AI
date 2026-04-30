@@ -4,6 +4,8 @@
 
 **AI-Powered Smart Resource Allocation for Disaster Relief & Volunteer Coordination**
 
+**[Experience the Live Web App Here](https://sevak-ai-3d2dc.firebaseapp.com)**
+
 *Google Solution Challenge 2026 — Build with AI*
 
 [![Flutter](https://img.shields.io/badge/Flutter-3.6+-02569B?style=for-the-badge&logo=flutter&logoColor=white)](https://flutter.dev)
